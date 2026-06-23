@@ -7,7 +7,7 @@
     <div>
       <p class="eyebrow">Book copy</p>
       <h1>{{ copy.inventory_code }}</h1>
-      <p class="muted"><a href="{% url 'book_detail' book.id %}">{{ book.title }}</a> - {{ book.author }}</p>
+      <p class="muted"><a href="{% url 'book_detail' book.id %}">{{ book.title }}</a> - {{ book.author }} - Ref {{ book.reference_number }}</p>
     </div>
     <div class="heading-actions">
       <span class="badge {{ availability_class }}">{{ availability_label }}</span>
@@ -31,6 +31,10 @@
         {% else %}
           <strong>Available</strong>
         {% endif %}
+      </div>
+      <div>
+        <span class="detail-label">Book reference</span>
+        <strong>{{ book.reference_number }}</strong>
       </div>
       <div>
         <span class="detail-label">ISBN</span>

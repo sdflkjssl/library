@@ -39,7 +39,7 @@
               <tr class="{% if row.loan and row.loan.is_overdue %}row-overdue{% endif %}">
                 <td>
                   <a class="record-link" href="{% url 'book_detail' row.copy.book.id %}">{{ row.copy.book.title }}</a>
-                  <span>{{ row.copy.book.author }}</span>
+                  <span>{{ row.copy.book.author }} - Ref {{ row.copy.book.reference_number }}</span>
                 </td>
                 <td><a href="{% url 'copy_detail' row.copy.id %}">{{ row.copy.inventory_code }}</a></td>
                 <td>

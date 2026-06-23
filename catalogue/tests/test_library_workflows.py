@@ -28,6 +28,7 @@ class LibraryWorkflowTests(TestCase):
         self.book = Book.objects.create(
             title="Clean Architecture",
             author="Robert C. Martin",
+            reference_number="BK-CA",
             isbn="9780134494166",
         )
         self.copy = BookCopy.objects.create(book=self.book, inventory_code="CA-001")
@@ -239,6 +240,7 @@ class LibraryWorkflowTests(TestCase):
             {
                 "title": "Working Effectively with Legacy Code",
                 "author": "Michael Feathers",
+                "reference_number": "BK-LEG",
                 "isbn": "9780131177055",
                 "description": "Legacy code techniques.",
                 "initial_copy_codes": "LEG-001, LEG-002",
@@ -258,6 +260,7 @@ class LibraryWorkflowTests(TestCase):
             {
                 "title": "Clean Architecture Updated",
                 "author": self.book.author,
+                "reference_number": self.book.reference_number,
                 "isbn": self.book.isbn,
                 "description": "Updated description.",
             },
@@ -266,6 +269,57 @@ class LibraryWorkflowTests(TestCase):
         self.book.refresh_from_db()
         self.assertEqual(response.status_code, 302)
         self.assertEqual(self.book.title, "Clean Architecture Updated")
+
+    def test_book_identifiers_are_globally_unique_on_create_and_edit(self):
+        other_book = Book.objects.create(
+            title="Patterns of Enterprise Application Architecture",
+            author="Martin Fowler",
+            reference_number="BK-PEAA",
+            isbn="9780321127426",
+        )
+        self.client.login(username="librarian", password="pass")
+
+        duplicate_isbn_response = self.client.post(
+            reverse("book_create"),
+            {
+                "title": "Duplicate ISBN",
+                "author": "Someone",
+                "reference_number": "BK-DUP-ISBN",
+                "isbn": self.book.isbn,
+                "description": "",
+                "initial_copy_codes": "",
+            },
+        )
+        duplicate_reference_response = self.client.post(
+            reverse("book_create"),
+            {
+                "title": "Duplicate reference",
+                "author": "Someone",
+                "reference_number": self.book.reference_number,
+                "isbn": "9780000000001",
+                "description": "",
+                "initial_copy_codes": "",
+            },
+        )
+        duplicate_edit_response = self.client.post(
+            reverse("book_update", args=[other_book.id]),
+            {
+                "title": other_book.title,
+                "author": other_book.author,
+                "reference_number": self.book.reference_number,
+                "isbn": self.book.isbn,
+                "description": "",
+            },
+        )
+
+        other_book.refresh_from_db()
+        self.assertEqual(duplicate_isbn_response.status_code, 200)
+        self.assertEqual(duplicate_reference_response.status_code, 200)
+        self.assertEqual(duplicate_edit_response.status_code, 200)
+        self.assertFalse(Book.objects.filter(reference_number="BK-DUP-ISBN").exists())
+        self.assertFalse(Book.objects.filter(isbn="9780000000001").exists())
+        self.assertEqual(other_book.reference_number, "BK-PEAA")
+        self.assertEqual(other_book.isbn, "9780321127426")
 
     def test_librarian_can_delete_book_without_loan_history(self):
         self.client.login(username="librarian", password="pass")
@@ -290,6 +344,7 @@ class LibraryWorkflowTests(TestCase):
             {
                 "title": "Blocked update",
                 "author": self.book.author,
+                "reference_number": self.book.reference_number,
                 "isbn": self.book.isbn,
                 "description": "",
             },
@@ -297,7 +352,7 @@ class LibraryWorkflowTests(TestCase):
         book_delete_response = self.client.post(reverse("book_delete", args=[self.book.id]))
         copy_update_response = self.client.post(
             reverse("book_copy_update", args=[self.copy.id]),
-            {"inventory_code": "CA-001X", "notes": ""},
+            {"inventory_code": "CA-001X"},
         )
         copy_delete_response = self.client.post(reverse("book_copy_delete", args=[self.copy.id]))
 
@@ -339,13 +394,13 @@ class LibraryWorkflowTests(TestCase):
 
         create_response = self.client.post(
             reverse("book_copy_create", args=[self.book.id]),
-            {"inventory_code": "CA-003", "notes": "Shelf A"},
+            {"inventory_code": "CA-003"},
         )
         copy = BookCopy.objects.get(inventory_code="CA-003")
 
         update_response = self.client.post(
             reverse("book_copy_update", args=[copy.id]),
-            {"inventory_code": "CA-003A", "notes": "Shelf B"},
+            {"inventory_code": "CA-003A"},
         )
         copy.refresh_from_db()
 
@@ -356,6 +411,27 @@ class LibraryWorkflowTests(TestCase):
         self.assertEqual(copy.inventory_code, "CA-003A")
         self.assertFalse(BookCopy.objects.filter(id=copy.id).exists())
         self.assertEqual(delete_response.url, reverse("book_detail", args=[self.book.id]))
+
+    def test_book_copy_number_is_globally_unique_on_create_and_edit(self):
+        self.client.login(username="librarian", password="pass")
+
+        duplicate_create_response = self.client.post(
+            reverse("book_copy_create", args=[self.book.id]),
+            {"inventory_code": self.copy.inventory_code},
+        )
+        duplicate_edit_response = self.client.post(
+            reverse("book_copy_update", args=[self.second_copy.id]),
+            {"inventory_code": self.copy.inventory_code},
+        )
+
+        self.second_copy.refresh_from_db()
+        self.assertEqual(duplicate_create_response.status_code, 200)
+        self.assertEqual(duplicate_edit_response.status_code, 200)
+        self.assertEqual(self.second_copy.inventory_code, "CA-002")
+        self.assertEqual(
+            BookCopy.objects.filter(inventory_code=self.copy.inventory_code).count(),
+            1,
+        )
 
     def test_book_copy_with_loan_history_cannot_be_deleted(self):
         loan = create_loan(
@@ -393,11 +469,11 @@ class LibraryWorkflowTests(TestCase):
                 "first_name": "Other",
                 "last_name": "Updated",
                 "email": "other@example.com",
-                "is_active": "on",
             },
         )
         self.other_reader.refresh_from_db()
         role = self.other_reader.profile.role
+        form_response = self.client.get(reverse("reader_update", args=[self.other_reader.id]))
         delete_response = self.client.post(
             reverse("reader_delete", args=[self.other_reader.id])
         )
@@ -405,6 +481,7 @@ class LibraryWorkflowTests(TestCase):
         self.assertEqual(update_response.status_code, 302)
         self.assertEqual(self.other_reader.username, "other-updated")
         self.assertEqual(role, UserProfile.Role.READER)
+        self.assertNotContains(form_response, "is_active")
         self.assertEqual(delete_response.status_code, 302)
         self.assertFalse(User.objects.filter(username="other-updated").exists())
 
@@ -504,19 +581,22 @@ class LibraryWorkflowTests(TestCase):
                 "first_name": "Updated",
                 "last_name": "Assistant",
                 "email": "updated@example.com",
-                "is_active": "on",
             },
         )
         librarian.refresh_from_db()
         role = librarian.profile.role
 
         list_response = self.client.get(reverse("librarians_list"))
+        form_response = self.client.get(reverse("librarian_update", args=[librarian.id]))
         delete_response = self.client.post(reverse("librarian_delete", args=[librarian.id]))
 
         self.assertEqual(create_response.status_code, 302)
         self.assertEqual(role, UserProfile.Role.LIBRARIAN)
         self.assertEqual(update_response.status_code, 302)
         self.assertEqual(librarian.first_name, "Updated")
+        self.assertContains(list_response, "(myself)")
+        self.assertNotContains(list_response, "<th>Status</th>")
+        self.assertNotContains(form_response, "is_active")
         self.assertContains(list_response, reverse("librarian_update", args=[librarian.id]))
         self.assertContains(list_response, reverse("librarian_delete", args=[librarian.id]))
         self.assertEqual(delete_response.status_code, 302)

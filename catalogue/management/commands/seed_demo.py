@@ -56,6 +56,7 @@ class Command(BaseCommand):
             {
                 "title": "Clean Code",
                 "author": "Robert C. Martin",
+                "reference_number": "BK-CC",
                 "isbn": "9780132350884",
                 "description": "Practical guidance for writing readable and maintainable software.",
                 "copies": ["CC-001", "CC-002"],
@@ -63,6 +64,7 @@ class Command(BaseCommand):
             {
                 "title": "The Pragmatic Programmer",
                 "author": "David Thomas and Andrew Hunt",
+                "reference_number": "BK-PP",
                 "isbn": "9780135957059",
                 "description": "Engineering habits and techniques for professional software developers.",
                 "copies": ["PP-001", "PP-002", "PP-003"],
@@ -70,6 +72,7 @@ class Command(BaseCommand):
             {
                 "title": "Designing Data-Intensive Applications",
                 "author": "Martin Kleppmann",
+                "reference_number": "BK-DDIA",
                 "isbn": "9781449373320",
                 "description": "A deep look at reliable, scalable, and maintainable data systems.",
                 "copies": ["DDIA-001", "DDIA-002"],
@@ -77,6 +80,7 @@ class Command(BaseCommand):
             {
                 "title": "Refactoring",
                 "author": "Martin Fowler",
+                "reference_number": "BK-RF",
                 "isbn": "9780134757599",
                 "description": "Improving the design of existing code through disciplined transformations.",
                 "copies": ["RF-001"],
@@ -84,6 +88,7 @@ class Command(BaseCommand):
             {
                 "title": "Domain-Driven Design",
                 "author": "Eric Evans",
+                "reference_number": "BK-DDD",
                 "isbn": "9780321125217",
                 "description": "Tackling complex software domains through model-driven design.",
                 "copies": ["DDD-001"],
@@ -97,6 +102,7 @@ class Command(BaseCommand):
                 defaults={
                     "title": item["title"],
                     "author": item["author"],
+                    "reference_number": item["reference_number"],
                     "description": item["description"],
                 },
             )

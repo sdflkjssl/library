@@ -6,7 +6,7 @@ A Django prototype for a small library system with separate reader and librarian
 
 - Reader login and librarian login with role-based access control.
 - Public reader signup and librarian-created reader accounts.
-- Catalogue search by title, author, or ISBN.
+- Catalogue search by title, author, internal book reference number, or ISBN.
 - Availability display as available copies over total copies, based on physical book copies.
 - Clickable book and copy detail pages.
 - Reader view of current loans and due dates.
@@ -15,6 +15,7 @@ A Django prototype for a small library system with separate reader and librarian
 - Reader, librarian, and book-copy index pages for librarian users, including an all/available book-copy filter.
 - Librarian workflows to add, edit, and delete books, book copies, reader accounts, and librarian accounts.
 - Book creation supports initial copy codes, and book detail pages support adding further book copies.
+- ISBNs, internal book reference numbers, and book copy numbers are globally unique.
 - Search-modal selection for readers and book copies, avoiding oversized dropdowns.
 - Confirmation warning before registering a return.
 - Transaction-wrapped loan operations and a database constraint preventing two active loans for the same copy.

@@ -32,23 +32,18 @@
               <th>Librarian</th>
               <th>Username</th>
               <th>Email</th>
-              <th>Status</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {% for librarian in librarians %}
               <tr>
-                <td>{{ librarian.get_full_name|default:librarian.username }}</td>
+                <td>
+                  {{ librarian.get_full_name|default:librarian.username }}
+                  {% if librarian.id == user.id %}<span class="subtle">(myself)</span>{% endif %}
+                </td>
                 <td>{{ librarian.username }}</td>
                 <td>{{ librarian.email|default:"-" }}</td>
-                <td>
-                  {% if librarian.is_active %}
-                    <span class="badge success">Active</span>
-                  {% else %}
-                    <span class="badge neutral">Inactive</span>
-                  {% endif %}
-                </td>
                 <td class="actions">
                   <div class="action-group">
                     <a class="button compact secondary" href="{% url 'librarian_update' librarian.id %}">Edit</a>

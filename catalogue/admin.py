@@ -22,15 +22,21 @@ class BookCopyInline(admin.TabularInline):
 
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
-    list_display = ("title", "author", "isbn")
-    search_fields = ("title", "author", "isbn")
+    list_display = ("title", "author", "reference_number", "isbn")
+    search_fields = ("title", "author", "reference_number", "isbn")
     inlines = [BookCopyInline]
 
 
 @admin.register(BookCopy)
 class BookCopyAdmin(admin.ModelAdmin):
     list_display = ("inventory_code", "book")
-    search_fields = ("inventory_code", "book__title", "book__author", "book__isbn")
+    search_fields = (
+        "inventory_code",
+        "book__title",
+        "book__author",
+        "book__reference_number",
+        "book__isbn",
+    )
     list_select_related = ("book",)
 
 

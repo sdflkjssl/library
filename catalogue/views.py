@@ -722,6 +722,7 @@ def copy_search_api(request):
             Q(inventory_code__icontains=query)
             | Q(book__title__icontains=query)
             | Q(book__author__icontains=query)
+            | Q(book__reference_number__icontains=query)
             | Q(book__isbn__icontains=query)
         )
     copies = list(copies.order_by("book__title", "inventory_code")[:20])

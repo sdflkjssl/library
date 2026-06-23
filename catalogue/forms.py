@@ -21,7 +21,7 @@ class CatalogueSearchForm(forms.Form):
         required=False,
         widget=forms.TextInput(
             attrs={
-                "placeholder": "Search by title, author, or ISBN",
+                "placeholder": "Search by title, author, ISBN, or reference number",
                 "autocomplete": "off",
             }
         ),
@@ -31,7 +31,7 @@ class CatalogueSearchForm(forms.Form):
 class BookForm(forms.ModelForm):
     class Meta:
         model = Book
-        fields = ("title", "author", "isbn", "description")
+        fields = ("title", "author", "reference_number", "isbn", "description")
         widgets = {
             "description": forms.Textarea(attrs={"rows": 4}),
         }
@@ -79,7 +79,7 @@ class BookCreateForm(BookForm):
 class BookCopyForm(forms.ModelForm):
     class Meta:
         model = BookCopy
-        fields = ("inventory_code", "notes")
+        fields = ("inventory_code",)
 
 
 class LoanCreateForm(forms.Form):
@@ -195,10 +195,10 @@ class LibrarianCreateForm(UserCreationForm):
 class LibrarianUpdateForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ("username", "first_name", "last_name", "email", "is_active")
+        fields = ("username", "first_name", "last_name", "email")
 
 
 class ReaderUpdateForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ("username", "first_name", "last_name", "email", "is_active")
+        fields = ("username", "first_name", "last_name", "email")

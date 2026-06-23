@@ -33,6 +33,7 @@
             <tr>
               <th>Title</th>
               <th>Author</th>
+              <th>Reference</th>
               <th>ISBN</th>
               <th>Availability</th>
             </tr>
@@ -45,6 +46,7 @@
                   {% if book.description %}<span>{{ book.description|truncatechars:90 }}</span>{% endif %}
                 </td>
                 <td>{{ book.author }}</td>
+                <td>{{ book.reference_number }}</td>
                 <td>{{ book.isbn }}</td>
                 <td>
                   {% if book.available_copies > 0 %}

@@ -18,7 +18,7 @@
     {% url 'api_reader_search' as reader_search_url %}
     {% include "catalogue/includes/search_picker.html" with field=form.reader selected_label=form.selected_reader_label endpoint=reader_search_url modal_title="Find reader" placeholder="Search by name, username, or email" empty_label="No reader selected" button_text="Find reader" %}
     {% url 'api_copy_search' as copy_search_url %}
-    {% include "catalogue/includes/search_picker.html" with field=form.copy selected_label=form.selected_copy_label endpoint=copy_search_url modal_title="Find available copy" placeholder="Search by title, author, ISBN, or copy code" empty_label="No copy selected" button_text="Find copy" %}
+    {% include "catalogue/includes/search_picker.html" with field=form.copy selected_label=form.selected_copy_label endpoint=copy_search_url modal_title="Find available copy" placeholder="Search by title, author, ISBN, reference number, or copy number" empty_label="No copy selected" button_text="Find copy" %}
     <label>
       {{ form.due_date.label }}
       {{ form.due_date }}

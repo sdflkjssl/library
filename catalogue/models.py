@@ -51,6 +51,7 @@ class BookQuerySet(models.QuerySet):
         return self.filter(
             Q(title__icontains=query)
             | Q(author__icontains=query)
+            | Q(reference_number__icontains=query)
             | Q(isbn__icontains=query)
         )
 
@@ -58,6 +59,7 @@ class BookQuerySet(models.QuerySet):
 class Book(models.Model):
     title = models.CharField(max_length=255, db_index=True)
     author = models.CharField(max_length=255, db_index=True)
+    reference_number = models.CharField("Reference number", max_length=40, unique=True)
     isbn = models.CharField("ISBN", max_length=20, unique=True)
     description = models.TextField(blank=True)
 
@@ -84,8 +86,7 @@ class BookCopyQuerySet(models.QuerySet):
 
 class BookCopy(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="copies")
-    inventory_code = models.CharField(max_length=40, unique=True)
-    notes = models.CharField(max_length=255, blank=True)
+    inventory_code = models.CharField("Book copy number", max_length=40, unique=True)
 
     objects = BookCopyQuerySet.as_manager()
 
