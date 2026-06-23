@@ -1,4 +1,52 @@
 (() => {
+  const themeStorageKey = "library-theme";
+  const themeButtons = document.querySelectorAll("[data-theme-option]");
+
+  function readStoredTheme() {
+    try {
+      return localStorage.getItem(themeStorageKey);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function writeStoredTheme(theme) {
+    try {
+      if (theme === "light" || theme === "dark") {
+        localStorage.setItem(themeStorageKey, theme);
+      } else {
+        localStorage.removeItem(themeStorageKey);
+      }
+    } catch (error) {
+      // Storage can be unavailable in private or locked-down browser contexts.
+    }
+  }
+
+  function applyTheme(theme) {
+    const mode = theme === "light" || theme === "dark" ? theme : "system";
+    if (mode === "system") {
+      document.documentElement.removeAttribute("data-theme");
+    } else {
+      document.documentElement.dataset.theme = mode;
+    }
+
+    for (const button of themeButtons) {
+      const isActive = button.dataset.themeOption === mode;
+      button.classList.toggle("active", isActive);
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    }
+  }
+
+  applyTheme(readStoredTheme());
+
+  for (const button of themeButtons) {
+    button.addEventListener("click", () => {
+      const theme = button.dataset.themeOption;
+      writeStoredTheme(theme);
+      applyTheme(theme);
+    });
+  }
+
   const searchModal = document.querySelector("[data-search-modal]");
   const searchInput = document.querySelector("[data-search-input]");
   const searchResults = document.querySelector("[data-search-results]");

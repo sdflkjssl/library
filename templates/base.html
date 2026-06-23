@@ -5,6 +5,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Library{% endblock %}</title>
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem("library-theme");
+        if (theme === "light" || theme === "dark") {
+          document.documentElement.dataset.theme = theme;
+        }
+      } catch (error) {
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
   <script src="{% static 'js/library-ui.js' %}" defer></script>
 </head>
@@ -28,6 +39,13 @@
           {% endif %}
         </nav>
         {% endwith %}
+      {% endif %}
+      <div class="theme-switcher" role="group" aria-label="Theme">
+        <button type="button" data-theme-option="system">System</button>
+        <button type="button" data-theme-option="light">Light</button>
+        <button type="button" data-theme-option="dark">Dark</button>
+      </div>
+      {% if user.is_authenticated %}
         <div class="account">
           <span>{{ user.get_username }}</span>
           <form method="post" action="{% url 'logout' %}">

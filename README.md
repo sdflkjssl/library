@@ -6,6 +6,8 @@ A Django prototype for a small library system with separate reader and librarian
 
 - Reader login and librarian login with role-based access control.
 - Public reader signup and librarian-created reader accounts.
+- Simple password policy requiring lowercase and uppercase letters, numbers, and special characters.
+- Light/dark theme switcher with a system-preference option.
 - Catalogue search by title, author, internal book reference number, or ISBN.
 - Availability display as available copies over total copies, based on physical book copies.
 - Clickable book and copy detail pages.

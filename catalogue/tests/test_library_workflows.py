@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
@@ -119,6 +120,23 @@ class LibraryWorkflowTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("reader_loans"))
+
+    def test_password_policy_only_requires_mixed_character_types(self):
+        validate_password("Aa1!")
+
+        with self.assertRaises(ValidationError):
+            validate_password("lowercase1!")
+        with self.assertRaises(ValidationError):
+            validate_password("NoNumber!")
+        with self.assertRaises(ValidationError):
+            validate_password("NoSymbol1")
+
+    def test_theme_switcher_renders_on_public_pages(self):
+        response = self.client.get(reverse("login"))
+
+        self.assertContains(response, 'data-theme-option="system"')
+        self.assertContains(response, 'data-theme-option="light"')
+        self.assertContains(response, 'data-theme-option="dark"')
 
     def test_reader_pages_use_reader_view_label(self):
         self.client.login(username="reader", password="pass")
