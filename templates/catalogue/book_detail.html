@@ -9,7 +9,14 @@
       <h1>{{ book.title }}</h1>
       <p class="muted">{{ book.author }} - ISBN {{ book.isbn }}</p>
     </div>
-    <span class="badge {{ availability_class }}">{{ availability_label }}</span>
+    <div class="heading-actions">
+      <span class="badge {{ availability_class }}">{{ availability_label }}</span>
+      {% if can_edit %}
+        <a class="button secondary" href="{% url 'book_update' book.id %}">Edit book</a>
+        <a class="button" href="{% url 'book_copy_create' book.id %}">Add book copy</a>
+        <a class="button danger" href="{% url 'book_delete' book.id %}">Delete book</a>
+      {% endif %}
+    </div>
   </section>
 
   {% if book.description %}
@@ -21,6 +28,9 @@
   <section class="panel">
     <div class="section-heading">
       <h2>Copies</h2>
+      {% if can_edit %}
+        <a class="button compact secondary" href="{% url 'book_copy_create' book.id %}">Add copy</a>
+      {% endif %}
     </div>
     {% if copy_rows %}
       <div class="table-wrap">
@@ -31,6 +41,7 @@
               <th>Status</th>
               {% if can_view_readers %}<th>Current reader</th>{% endif %}
               <th>Due date</th>
+              {% if can_edit %}<th></th>{% endif %}
             </tr>
           </thead>
           <tbody>
@@ -60,6 +71,14 @@
                     <span class="subtle">-</span>
                   {% endif %}
                 </td>
+                {% if can_edit %}
+                  <td class="actions">
+                    <div class="action-group">
+                      <a class="button compact secondary" href="{% url 'book_copy_update' row.copy.id %}">Edit</a>
+                      <a class="button compact danger" href="{% url 'book_copy_delete' row.copy.id %}">Delete</a>
+                    </div>
+                  </td>
+                {% endif %}
               </tr>
             {% endfor %}
           </tbody>

@@ -9,7 +9,13 @@
       <h1>{{ copy.inventory_code }}</h1>
       <p class="muted"><a href="{% url 'book_detail' book.id %}">{{ book.title }}</a> - {{ book.author }}</p>
     </div>
-    <span class="badge {{ availability_class }}">{{ availability_label }}</span>
+    <div class="heading-actions">
+      <span class="badge {{ availability_class }}">{{ availability_label }}</span>
+      {% if can_edit %}
+        <a class="button secondary" href="{% url 'book_copy_update' copy.id %}">Edit copy</a>
+        <a class="button danger" href="{% url 'book_copy_delete' copy.id %}">Delete copy</a>
+      {% endif %}
+    </div>
   </section>
 
   <section class="panel">

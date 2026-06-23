@@ -8,6 +8,9 @@
       <p class="eyebrow">Catalogue</p>
       <h1>Find a book</h1>
     </div>
+    {% if user.profile.role == "librarian" or user.is_superuser %}
+      <a class="button primary" href="{% url 'book_create' %}">Add book</a>
+    {% endif %}
   </section>
 
   <form class="search-bar" method="get">

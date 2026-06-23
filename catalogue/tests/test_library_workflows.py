@@ -111,6 +111,14 @@ class LibraryWorkflowTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
 
+    def test_reader_dashboard_redirects_to_my_loans(self):
+        self.client.login(username="reader", password="pass")
+
+        response = self.client.get(reverse("dashboard"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("reader_loans"))
+
     def test_librarian_catalogue_shows_availability_counts(self):
         create_loan(
             reader=self.reader,
@@ -124,6 +132,22 @@ class LibraryWorkflowTests(TestCase):
 
         self.assertContains(response, "1/2")
         self.assertContains(response, reverse("book_detail", args=[self.book.id]))
+
+    def test_navigation_marks_current_page_without_linking_brand(self):
+        self.client.login(username="librarian", password="pass")
+
+        response = self.client.get(reverse("librarian_dashboard"))
+
+        self.assertContains(response, '<span class="brand">Library Desk</span>')
+        self.assertNotContains(response, '<a class="brand"')
+        self.assertContains(response, '<a class="active" href="/librarian/">Loans</a>')
+
+        response = self.client.get(reverse("book_copies_list"))
+
+        self.assertContains(
+            response,
+            '<a class="active" href="/librarian/copies/">All book copies</a>',
+        )
 
     def test_librarian_can_search_available_copies_for_modal(self):
         create_loan(
@@ -195,9 +219,93 @@ class LibraryWorkflowTests(TestCase):
 
         self.assertContains(available_response, self.second_copy.inventory_code)
         self.assertNotContains(available_response, self.copy.inventory_code)
-        self.assertContains(available_response, "All copies")
+        self.assertContains(available_response, "All book copies")
+        self.assertContains(available_response, "Available book copies")
         self.assertContains(all_response, self.copy.inventory_code)
         self.assertContains(all_response, self.second_copy.inventory_code)
+
+    def test_librarian_can_create_book_with_initial_copies(self):
+        self.client.login(username="librarian", password="pass")
+
+        response = self.client.post(
+            reverse("book_create"),
+            {
+                "title": "Working Effectively with Legacy Code",
+                "author": "Michael Feathers",
+                "isbn": "9780131177055",
+                "description": "Legacy code techniques.",
+                "initial_copy_codes": "LEG-001, LEG-002",
+            },
+        )
+
+        book = Book.objects.get(isbn="9780131177055")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("book_detail", args=[book.id]))
+        self.assertEqual(book.copies.count(), 2)
+
+    def test_librarian_can_edit_book(self):
+        self.client.login(username="librarian", password="pass")
+
+        response = self.client.post(
+            reverse("book_update", args=[self.book.id]),
+            {
+                "title": "Clean Architecture Updated",
+                "author": self.book.author,
+                "isbn": self.book.isbn,
+                "description": "Updated description.",
+            },
+        )
+
+        self.book.refresh_from_db()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.book.title, "Clean Architecture Updated")
+
+    def test_librarian_can_delete_book_without_loan_history(self):
+        self.client.login(username="librarian", password="pass")
+
+        response = self.client.post(reverse("book_delete", args=[self.book.id]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Book.objects.filter(id=self.book.id).exists())
+        self.assertFalse(BookCopy.objects.filter(book_id=self.book.id).exists())
+
+    def test_librarian_can_add_edit_and_delete_book_copy(self):
+        self.client.login(username="librarian", password="pass")
+
+        create_response = self.client.post(
+            reverse("book_copy_create", args=[self.book.id]),
+            {"inventory_code": "CA-003", "notes": "Shelf A"},
+        )
+        copy = BookCopy.objects.get(inventory_code="CA-003")
+
+        update_response = self.client.post(
+            reverse("book_copy_update", args=[copy.id]),
+            {"inventory_code": "CA-003A", "notes": "Shelf B"},
+        )
+        copy.refresh_from_db()
+
+        delete_response = self.client.post(reverse("book_copy_delete", args=[copy.id]))
+
+        self.assertEqual(create_response.status_code, 302)
+        self.assertEqual(update_response.status_code, 302)
+        self.assertEqual(copy.inventory_code, "CA-003A")
+        self.assertFalse(BookCopy.objects.filter(id=copy.id).exists())
+        self.assertEqual(delete_response.url, reverse("book_detail", args=[self.book.id]))
+
+    def test_book_copy_with_loan_history_cannot_be_deleted(self):
+        loan = create_loan(
+            reader=self.reader,
+            copy=self.copy,
+            due_date=timezone.localdate() + timedelta(days=7),
+            loaned_by=self.librarian,
+        )
+        return_loan(loan=loan, returned_by=self.librarian)
+        self.client.login(username="librarian", password="pass")
+
+        response = self.client.post(reverse("book_copy_delete", args=[self.copy.id]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(BookCopy.objects.filter(id=self.copy.id).exists())
 
     def test_readers_page_lists_readers_and_links_to_reader_loans(self):
         self.client.login(username="librarian", password="pass")
@@ -261,3 +369,50 @@ class LibraryWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("librarian_reader_loans", args=[user.id]))
         self.assertEqual(user.profile.role, UserProfile.Role.READER)
+
+    def test_librarian_can_create_edit_and_delete_librarian_account(self):
+        User = get_user_model()
+        self.client.login(username="librarian", password="pass")
+
+        create_response = self.client.post(
+            reverse("librarian_create"),
+            {
+                "username": "assistant",
+                "first_name": "Desk",
+                "last_name": "Assistant",
+                "email": "assistant@example.com",
+                "password1": "AssistantPass987!",
+                "password2": "AssistantPass987!",
+            },
+        )
+        librarian = User.objects.get(username="assistant")
+
+        update_response = self.client.post(
+            reverse("librarian_update", args=[librarian.id]),
+            {
+                "username": "assistant",
+                "first_name": "Updated",
+                "last_name": "Assistant",
+                "email": "updated@example.com",
+                "is_active": "on",
+            },
+        )
+        librarian.refresh_from_db()
+        role = librarian.profile.role
+
+        delete_response = self.client.post(reverse("librarian_delete", args=[librarian.id]))
+
+        self.assertEqual(create_response.status_code, 302)
+        self.assertEqual(role, UserProfile.Role.LIBRARIAN)
+        self.assertEqual(update_response.status_code, 302)
+        self.assertEqual(librarian.first_name, "Updated")
+        self.assertEqual(delete_response.status_code, 302)
+        self.assertFalse(User.objects.filter(username="assistant").exists())
+
+    def test_librarian_cannot_delete_own_account(self):
+        self.client.login(username="librarian", password="pass")
+
+        response = self.client.post(reverse("librarian_delete", args=[self.librarian.id]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(get_user_model().objects.filter(id=self.librarian.id).exists())

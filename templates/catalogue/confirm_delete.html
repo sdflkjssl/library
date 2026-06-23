@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Library{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Confirm deletion</p>
+      <h1>{{ title }}</h1>
+    </div>
+  </section>
+
+  <section class="panel narrow danger-panel">
+    <h2>{{ object_name }}</h2>
+    <p class="muted">This action cannot be undone.</p>
+    <form class="form-actions" method="post">
+      {% csrf_token %}
+      <button class="button danger" type="submit">Delete</button>
+      <a class="button secondary" href="{{ cancel_href }}">Cancel</a>
+    </form>
+  </section>
+{% endblock %}

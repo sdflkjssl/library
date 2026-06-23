@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 from django.utils import timezone
 
-from .models import BookCopy, UserProfile
+from .models import Book, BookCopy, UserProfile
 
 
 User = get_user_model()
@@ -26,6 +26,60 @@ class CatalogueSearchForm(forms.Form):
             }
         ),
     )
+
+
+class BookForm(forms.ModelForm):
+    class Meta:
+        model = Book
+        fields = ("title", "author", "isbn", "description")
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 4}),
+        }
+
+
+class BookCreateForm(BookForm):
+    initial_copy_codes = forms.CharField(
+        label="Initial book copies",
+        required=False,
+        help_text="Add one copy code per line, or separate codes with commas.",
+        widget=forms.Textarea(
+            attrs={
+                "rows": 4,
+                "placeholder": "e.g. CC-001, CC-002",
+            }
+        ),
+    )
+
+    def clean_initial_copy_codes(self):
+        raw_value = self.cleaned_data.get("initial_copy_codes", "")
+        codes = [
+            code.strip()
+            for line in raw_value.splitlines()
+            for code in line.split(",")
+            if code.strip()
+        ]
+        duplicates = sorted({code for code in codes if codes.count(code) > 1})
+        if duplicates:
+            raise forms.ValidationError(
+                f"Duplicate copy code in this form: {', '.join(duplicates)}."
+            )
+        existing = list(
+            BookCopy.objects.filter(inventory_code__in=codes).values_list(
+                "inventory_code",
+                flat=True,
+            )
+        )
+        if existing:
+            raise forms.ValidationError(
+                f"Copy code already exists: {', '.join(sorted(existing))}."
+            )
+        return codes
+
+
+class BookCopyForm(forms.ModelForm):
+    class Meta:
+        model = BookCopy
+        fields = ("inventory_code", "notes")
 
 
 class LoanCreateForm(forms.Form):
@@ -113,3 +167,32 @@ class ReaderSignupForm(UserCreationForm):
             profile.role = UserProfile.Role.READER
             profile.save(update_fields=["role"])
         return user
+
+
+class LibrarianCreateForm(UserCreationForm):
+    first_name = forms.CharField(max_length=150, label="First name")
+    last_name = forms.CharField(max_length=150, label="Last name")
+    email = forms.EmailField(label="Email", required=False)
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ("username", "first_name", "last_name", "email")
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.first_name = self.cleaned_data["first_name"]
+        user.last_name = self.cleaned_data["last_name"]
+        user.email = self.cleaned_data.get("email", "")
+        user.is_staff = True
+        if commit:
+            user.save()
+            profile, _ = UserProfile.objects.get_or_create(user=user)
+            profile.role = UserProfile.Role.LIBRARIAN
+            profile.save(update_fields=["role"])
+        return user
+
+
+class LibrarianUpdateForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ("username", "first_name", "last_name", "email", "is_active")

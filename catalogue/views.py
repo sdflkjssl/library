@@ -3,15 +3,23 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Count, Q
+from django.db.models.deletion import ProtectedError
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import (
+    BookCopyForm,
+    BookCreateForm,
+    BookForm,
     CatalogueSearchForm,
     DueDateForm,
+    LibrarianCreateForm,
+    LibrarianUpdateForm,
     LoanCreateForm,
     ReaderSignupForm,
 )
@@ -33,6 +41,10 @@ def _book_availability_class(book):
 
 def _user_display(user):
     return user.get_full_name() or user.get_username()
+
+
+def _librarians():
+    return User.objects.filter(profile__role=UserProfile.Role.LIBRARIAN)
 
 
 def signup(request):
@@ -61,17 +73,7 @@ def dashboard(request):
     if is_librarian(request.user):
         return redirect("librarian_dashboard")
     if is_reader(request.user):
-        active_loans = (
-            Loan.objects.active()
-            .filter(reader=request.user)
-            .select_related("copy", "copy__book")
-            .order_by("due_date")[:5]
-        )
-        return render(
-            request,
-            "catalogue/reader_dashboard.html",
-            {"active_loans": active_loans},
-        )
+        return redirect("reader_loans")
     raise Http404("Unknown user role")
 
 
@@ -87,6 +89,69 @@ def catalogue_search(request):
         request,
         "catalogue/catalogue.html",
         {"form": form, "books": books, "query": query},
+    )
+
+
+@librarian_required
+def book_create(request):
+    form = BookCreateForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        with transaction.atomic():
+            book = form.save()
+            for code in form.cleaned_data["initial_copy_codes"]:
+                BookCopy.objects.create(book=book, inventory_code=code)
+        messages.success(request, f"Book created: {book.title}.")
+        return redirect("book_detail", book_id=book.id)
+    return render(
+        request,
+        "catalogue/book_form.html",
+        {"form": form, "title": "Add book", "submit_label": "Add book"},
+    )
+
+
+@librarian_required
+def book_update(request, book_id):
+    book = get_object_or_404(Book, pk=book_id)
+    form = BookForm(request.POST or None, instance=book)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Book updated.")
+        return redirect("book_detail", book_id=book.id)
+    return render(
+        request,
+        "catalogue/book_form.html",
+        {
+            "form": form,
+            "book": book,
+            "title": "Edit book",
+            "submit_label": "Save book",
+        },
+    )
+
+
+@librarian_required
+def book_delete(request, book_id):
+    book = get_object_or_404(Book, pk=book_id)
+    if request.method == "POST":
+        title = book.title
+        try:
+            book.delete()
+        except ProtectedError:
+            messages.error(
+                request,
+                "This book cannot be deleted because one or more copies have loan history.",
+            )
+            return redirect("book_detail", book_id=book.id)
+        messages.success(request, f"Deleted {title}.")
+        return redirect("catalogue")
+    return render(
+        request,
+        "catalogue/confirm_delete.html",
+        {
+            "title": "Delete book",
+            "object_name": book.title,
+            "cancel_href": reverse("book_detail", args=[book.id]),
+        },
     )
 
 
@@ -110,6 +175,7 @@ def book_detail(request, book_id):
             "availability_label": _book_availability_label(book),
             "availability_class": _book_availability_class(book),
             "can_view_readers": is_librarian(request.user),
+            "can_edit": is_librarian(request.user),
         },
     )
 
@@ -139,6 +205,77 @@ def copy_detail(request, copy_id):
             "availability_label": _book_availability_label(book),
             "availability_class": _book_availability_class(book),
             "can_view_readers": is_librarian(request.user),
+            "can_edit": is_librarian(request.user),
+        },
+    )
+
+
+@librarian_required
+def book_copy_create(request, book_id):
+    book = get_object_or_404(Book, pk=book_id)
+    form = BookCopyForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        copy = form.save(commit=False)
+        copy.book = book
+        copy.save()
+        messages.success(request, f"Book copy {copy.inventory_code} added.")
+        return redirect("book_detail", book_id=book.id)
+    return render(
+        request,
+        "catalogue/book_copy_form.html",
+        {
+            "form": form,
+            "book": book,
+            "title": "Add book copy",
+            "submit_label": "Add copy",
+        },
+    )
+
+
+@librarian_required
+def book_copy_update(request, copy_id):
+    copy = get_object_or_404(BookCopy.objects.select_related("book"), pk=copy_id)
+    form = BookCopyForm(request.POST or None, instance=copy)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Book copy updated.")
+        return redirect("copy_detail", copy_id=copy.id)
+    return render(
+        request,
+        "catalogue/book_copy_form.html",
+        {
+            "form": form,
+            "copy": copy,
+            "book": copy.book,
+            "title": "Edit book copy",
+            "submit_label": "Save copy",
+        },
+    )
+
+
+@librarian_required
+def book_copy_delete(request, copy_id):
+    copy = get_object_or_404(BookCopy.objects.select_related("book"), pk=copy_id)
+    book_id = copy.book_id
+    if request.method == "POST":
+        code = copy.inventory_code
+        try:
+            copy.delete()
+        except ProtectedError:
+            messages.error(
+                request,
+                "This book copy cannot be deleted because it has loan history.",
+            )
+            return redirect("copy_detail", copy_id=copy.id)
+        messages.success(request, f"Deleted copy {code}.")
+        return redirect("book_detail", book_id=book_id)
+    return render(
+        request,
+        "catalogue/confirm_delete.html",
+        {
+            "title": "Delete book copy",
+            "object_name": copy.inventory_code,
+            "cancel_href": reverse("copy_detail", args=[copy.id]),
         },
     )
 
@@ -228,6 +365,85 @@ def readers_list(request):
 
 
 @librarian_required
+def librarians_list(request):
+    query = request.GET.get("q", "").strip()
+    librarians = _librarians()
+    if query:
+        librarians = librarians.filter(
+            Q(username__icontains=query)
+            | Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+            | Q(email__icontains=query)
+        )
+    librarians = librarians.order_by("last_name", "first_name", "username")
+    return render(
+        request,
+        "catalogue/librarians_list.html",
+        {"librarians": librarians, "query": query},
+    )
+
+
+@librarian_required
+def librarian_create(request):
+    form = LibrarianCreateForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        librarian = form.save()
+        messages.success(request, f"Librarian account created for {_user_display(librarian)}.")
+        return redirect("librarians_list")
+    return render(
+        request,
+        "catalogue/librarian_form.html",
+        {
+            "form": form,
+            "title": "Add librarian",
+            "submit_label": "Add librarian",
+        },
+    )
+
+
+@librarian_required
+def librarian_update(request, user_id):
+    librarian = get_object_or_404(_librarians(), pk=user_id)
+    form = LibrarianUpdateForm(request.POST or None, instance=librarian)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Librarian account updated.")
+        return redirect("librarians_list")
+    return render(
+        request,
+        "catalogue/librarian_form.html",
+        {
+            "form": form,
+            "librarian": librarian,
+            "title": "Edit librarian",
+            "submit_label": "Save librarian",
+        },
+    )
+
+
+@librarian_required
+def librarian_delete(request, user_id):
+    librarian = get_object_or_404(_librarians(), pk=user_id)
+    if librarian.id == request.user.id:
+        messages.error(request, "You cannot delete your own librarian account.")
+        return redirect("librarians_list")
+    if request.method == "POST":
+        name = _user_display(librarian)
+        librarian.delete()
+        messages.success(request, f"Deleted librarian account for {name}.")
+        return redirect("librarians_list")
+    return render(
+        request,
+        "catalogue/confirm_delete.html",
+        {
+            "title": "Delete librarian",
+            "object_name": _user_display(librarian),
+            "cancel_href": reverse("librarians_list"),
+        },
+    )
+
+
+@librarian_required
 def book_copies_list(request):
     status = request.GET.get("status", "all")
     if status == "available":
@@ -236,7 +452,7 @@ def book_copies_list(request):
     else:
         status = "all"
         copies = BookCopy.objects.with_active_loan_flag().select_related("book")
-        title = "Book copies"
+        title = "All book copies"
 
     active_loans = {
         loan.copy_id: loan

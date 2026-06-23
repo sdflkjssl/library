@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Library{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Librarian view</p>
+      <h1>{{ title }}</h1>
+    </div>
+  </section>
+
+  <form class="panel form-stack narrow" method="post">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="form-errors">{{ form.non_field_errors }}</div>
+    {% endif %}
+    {% for field in form %}
+      <label class="{% if field.field.widget.input_type == 'checkbox' %}checkbox-label{% endif %}">
+        {{ field.label }}
+        {{ field }}
+        {% if field.help_text %}<span class="help-text">{{ field.help_text }}</span>{% endif %}
+        {% if field.errors %}<span class="field-error">{{ field.errors|striptags }}</span>{% endif %}
+      </label>
+    {% endfor %}
+    <div class="form-actions">
+      <button class="button primary" type="submit">{{ submit_label }}</button>
+      <a class="button secondary" href="{% url 'librarians_list' %}">Cancel</a>
+    </div>
+  </form>
+{% endblock %}

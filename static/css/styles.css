@@ -56,6 +56,12 @@ textarea {
   padding: 0.72rem 0.85rem;
 }
 
+input[type="checkbox"] {
+  width: auto;
+  min-width: 18px;
+  min-height: 18px;
+}
+
 input:focus,
 select:focus,
 textarea:focus {
@@ -94,13 +100,33 @@ textarea:focus {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.45rem;
   flex: 1;
+  flex-wrap: wrap;
 }
 
 .nav-links a {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
   color: var(--muted);
   font-weight: 600;
+  padding: 0.42rem 0.72rem;
+}
+
+.nav-links a:hover {
+  background: var(--surface-soft);
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.nav-links a.active {
+  background: var(--surface-soft);
+  border-color: var(--line);
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--primary);
 }
 
 .account {
@@ -129,6 +155,14 @@ textarea:focus {
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.4rem;
+}
+
+.heading-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  flex-wrap: wrap;
 }
 
 .eyebrow {
@@ -418,8 +452,19 @@ tr:last-child td {
   font-weight: 700;
 }
 
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  justify-content: flex-start;
+}
+
 .narrow {
   max-width: 620px;
+}
+
+.danger-panel {
+  border-color: rgba(163, 40, 40, 0.25);
 }
 
 .form-errors,
@@ -440,6 +485,12 @@ tr:last-child td {
 
 .field-error {
   font-size: 0.9rem;
+}
+
+.help-text {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .messages {
@@ -647,6 +698,7 @@ tr:last-child td {
   .nav-links,
   .account,
   .page-heading,
+  .heading-actions,
   .inline-form,
   .search-bar,
   .action-group,

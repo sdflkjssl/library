@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Librarians - Library{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Librarian view</p>
+      <h1>Librarians</h1>
+    </div>
+    <a class="button primary" href="{% url 'librarian_create' %}">Add librarian</a>
+  </section>
+
+  <form class="search-bar" method="get">
+    <input type="search" name="q" value="{{ query }}" placeholder="Search by name, username, or email" autocomplete="off">
+    <button class="button primary" type="submit">Search</button>
+    {% if query %}
+      <a class="button secondary" href="{% url 'librarians_list' %}">Clear</a>
+    {% endif %}
+  </form>
+
+  <section class="panel">
+    <div class="section-heading">
+      <h2>Librarians</h2>
+      <span>{{ librarians|length }} result{{ librarians|length|pluralize }}</span>
+    </div>
+    {% if librarians %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Librarian</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for librarian in librarians %}
+              <tr>
+                <td>{{ librarian.get_full_name|default:librarian.username }}</td>
+                <td>{{ librarian.username }}</td>
+                <td>{{ librarian.email|default:"-" }}</td>
+                <td>
+                  {% if librarian.is_active %}
+                    <span class="badge success">Active</span>
+                  {% else %}
+                    <span class="badge neutral">Inactive</span>
+                  {% endif %}
+                </td>
+                <td class="actions">
+                  <div class="action-group">
+                    <a class="button compact secondary" href="{% url 'librarian_update' librarian.id %}">Edit</a>
+                    {% if librarian.id != user.id %}
+                      <a class="button compact danger" href="{% url 'librarian_delete' librarian.id %}">Delete</a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">No librarians matched your search.</p>
+    {% endif %}
+  </section>
+{% endblock %}

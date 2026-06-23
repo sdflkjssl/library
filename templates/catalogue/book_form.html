@@ -1,21 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Edit due date - Library{% endblock %}
+{% block title %}{{ title }} - Library{% endblock %}
 
 {% block content %}
   <section class="page-heading">
     <div>
       <p class="eyebrow">Librarian view</p>
-      <h1>Edit due date</h1>
+      <h1>{{ title }}</h1>
     </div>
   </section>
 
   <form class="panel form-stack narrow" method="post">
     {% csrf_token %}
-    <div class="loan-summary">
-      <a class="record-link" href="{% url 'book_detail' loan.copy.book.id %}">{{ loan.copy.book.title }}</a>
-      <span><a href="{% url 'librarian_reader_loans' loan.reader.id %}">{{ loan.reader.get_full_name|default:loan.reader.username }}</a> - <a href="{% url 'copy_detail' loan.copy.id %}">{{ loan.copy.inventory_code }}</a></span>
-    </div>
     {% if form.non_field_errors %}
       <div class="form-errors">{{ form.non_field_errors }}</div>
     {% endif %}
@@ -23,12 +19,17 @@
       <label>
         {{ field.label }}
         {{ field }}
+        {% if field.help_text %}<span class="help-text">{{ field.help_text }}</span>{% endif %}
         {% if field.errors %}<span class="field-error">{{ field.errors|striptags }}</span>{% endif %}
       </label>
     {% endfor %}
     <div class="form-actions">
-      <button class="button primary" type="submit">Save due date</button>
-      <a class="button secondary" href="{% url 'librarian_reader_loans' loan.reader_id %}">Cancel</a>
+      <button class="button primary" type="submit">{{ submit_label }}</button>
+      {% if book %}
+        <a class="button secondary" href="{% url 'book_detail' book.id %}">Cancel</a>
+      {% else %}
+        <a class="button secondary" href="{% url 'catalogue' %}">Cancel</a>
+      {% endif %}
     </div>
   </form>
 {% endblock %}
