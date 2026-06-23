@@ -21,6 +21,7 @@ from .forms import (
     LibrarianCreateForm,
     LibrarianUpdateForm,
     LoanCreateForm,
+    ReaderUpdateForm,
     ReaderSignupForm,
 )
 from .models import Book, BookCopy, Loan, UserProfile
@@ -45,6 +46,22 @@ def _user_display(user):
 
 def _librarians():
     return User.objects.filter(profile__role=UserProfile.Role.LIBRARIAN)
+
+
+def _readers():
+    return User.objects.filter(profile__role=UserProfile.Role.READER)
+
+
+def _book_has_active_loans(book):
+    return Loan.objects.active().filter(copy__book=book).exists()
+
+
+def _copy_has_active_loan(copy):
+    return Loan.objects.active().filter(copy=copy).exists()
+
+
+def _copy_has_loan_history(copy):
+    return Loan.objects.filter(copy=copy).exists()
 
 
 def signup(request):
@@ -112,6 +129,12 @@ def book_create(request):
 @librarian_required
 def book_update(request, book_id):
     book = get_object_or_404(Book, pk=book_id)
+    if _book_has_active_loans(book):
+        messages.error(
+            request,
+            "This book cannot be edited while one or more copies are on loan.",
+        )
+        return redirect("book_detail", book_id=book.id)
     form = BookForm(request.POST or None, instance=book)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -132,6 +155,12 @@ def book_update(request, book_id):
 @librarian_required
 def book_delete(request, book_id):
     book = get_object_or_404(Book, pk=book_id)
+    if _book_has_active_loans(book):
+        messages.error(
+            request,
+            "This book cannot be deleted while one or more copies are on loan.",
+        )
+        return redirect("book_detail", book_id=book.id)
     if request.method == "POST":
         title = book.title
         try:
@@ -165,7 +194,20 @@ def book_detail(request, book_id):
         .filter(copy__book=book)
         .select_related("reader", "copy")
     }
-    copy_rows = [{"copy": copy, "loan": active_loans.get(copy.id)} for copy in copies]
+    loan_history_copy_ids = set(
+        Loan.objects.filter(copy__book=book).values_list("copy_id", flat=True)
+    )
+    copy_rows = [
+        {
+            "copy": copy,
+            "loan": active_loans.get(copy.id),
+            "has_loan_history": copy.id in loan_history_copy_ids,
+        }
+        for copy in copies
+    ]
+    can_edit = is_librarian(request.user)
+    book_has_active_loans = bool(active_loans)
+    book_has_loan_history = bool(loan_history_copy_ids)
     return render(
         request,
         "catalogue/book_detail.html",
@@ -174,8 +216,12 @@ def book_detail(request, book_id):
             "copy_rows": copy_rows,
             "availability_label": _book_availability_label(book),
             "availability_class": _book_availability_class(book),
-            "can_view_readers": is_librarian(request.user),
-            "can_edit": is_librarian(request.user),
+            "can_view_readers": can_edit,
+            "can_edit": can_edit,
+            "can_modify_book": can_edit and not book_has_active_loans,
+            "can_delete_book": can_edit
+            and not book_has_active_loans
+            and not book_has_loan_history,
         },
     )
 
@@ -194,6 +240,8 @@ def copy_detail(request, copy_id):
         active_loan
         and (is_librarian(request.user) or active_loan.reader_id == request.user.id)
     )
+    can_edit = is_librarian(request.user)
+    has_loan_history = _copy_has_loan_history(copy)
     return render(
         request,
         "catalogue/copy_detail.html",
@@ -204,8 +252,10 @@ def copy_detail(request, copy_id):
             "can_view_loan": can_view_loan,
             "availability_label": _book_availability_label(book),
             "availability_class": _book_availability_class(book),
-            "can_view_readers": is_librarian(request.user),
-            "can_edit": is_librarian(request.user),
+            "can_view_readers": can_edit,
+            "can_edit": can_edit,
+            "can_modify_copy": can_edit and not active_loan,
+            "can_delete_copy": can_edit and not active_loan and not has_loan_history,
         },
     )
 
@@ -235,6 +285,9 @@ def book_copy_create(request, book_id):
 @librarian_required
 def book_copy_update(request, copy_id):
     copy = get_object_or_404(BookCopy.objects.select_related("book"), pk=copy_id)
+    if _copy_has_active_loan(copy):
+        messages.error(request, "This book copy cannot be edited while it is on loan.")
+        return redirect("copy_detail", copy_id=copy.id)
     form = BookCopyForm(request.POST or None, instance=copy)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -256,6 +309,9 @@ def book_copy_update(request, copy_id):
 @librarian_required
 def book_copy_delete(request, copy_id):
     copy = get_object_or_404(BookCopy.objects.select_related("book"), pk=copy_id)
+    if _copy_has_active_loan(copy):
+        messages.error(request, "This book copy cannot be deleted while it is on loan.")
+        return redirect("copy_detail", copy_id=copy.id)
     book_id = copy.book_id
     if request.method == "POST":
         code = copy.inventory_code
@@ -339,7 +395,7 @@ def librarian_dashboard(request):
 @librarian_required
 def readers_list(request):
     query = request.GET.get("q", "").strip()
-    readers = User.objects.filter(profile__role=UserProfile.Role.READER)
+    readers = _readers()
     if query:
         readers = readers.filter(
             Q(username__icontains=query)
@@ -348,19 +404,74 @@ def readers_list(request):
             | Q(email__icontains=query)
         )
     readers = readers.annotate(
-        active_loan_count=Count("loans", filter=Q(loans__returned_at__isnull=True)),
+        loan_count=Count("loans", distinct=True),
+        active_loan_count=Count(
+            "loans",
+            filter=Q(loans__returned_at__isnull=True),
+            distinct=True,
+        ),
         overdue_loan_count=Count(
             "loans",
             filter=Q(
                 loans__returned_at__isnull=True,
                 loans__due_date__lt=timezone.localdate(),
             ),
+            distinct=True,
         ),
     ).order_by("last_name", "first_name", "username")
     return render(
         request,
         "catalogue/readers_list.html",
         {"readers": readers, "query": query},
+    )
+
+
+@librarian_required
+def reader_update(request, user_id):
+    reader = get_object_or_404(_readers(), pk=user_id)
+    form = ReaderUpdateForm(request.POST or None, instance=reader)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Reader account updated.")
+        return redirect("readers_list")
+    return render(
+        request,
+        "catalogue/reader_form.html",
+        {
+            "form": form,
+            "reader": reader,
+            "title": "Edit reader",
+            "submit_label": "Save reader",
+        },
+    )
+
+
+@librarian_required
+def reader_delete(request, user_id):
+    reader = get_object_or_404(_readers(), pk=user_id)
+    if Loan.objects.active().filter(reader=reader).exists():
+        messages.error(request, "This reader cannot be deleted while they have active loans.")
+        return redirect("librarian_reader_loans", reader_id=reader.id)
+    if request.method == "POST":
+        name = _user_display(reader)
+        try:
+            reader.delete()
+        except ProtectedError:
+            messages.error(
+                request,
+                "This reader cannot be deleted because they have loan history.",
+            )
+            return redirect("readers_list")
+        messages.success(request, f"Deleted reader account for {name}.")
+        return redirect("readers_list")
+    return render(
+        request,
+        "catalogue/confirm_delete.html",
+        {
+            "title": "Delete reader",
+            "object_name": _user_display(reader),
+            "cancel_href": reverse("readers_list"),
+        },
     )
 
 
@@ -460,8 +571,18 @@ def book_copies_list(request):
         .filter(copy_id__in=copies.values("id"))
         .select_related("reader", "copy", "copy__book")
     }
+    loan_history_copy_ids = set(
+        Loan.objects.filter(copy_id__in=copies.values("id")).values_list(
+            "copy_id",
+            flat=True,
+        )
+    )
     copy_rows = [
-        {"copy": copy, "loan": active_loans.get(copy.id)}
+        {
+            "copy": copy,
+            "loan": active_loans.get(copy.id),
+            "has_loan_history": copy.id in loan_history_copy_ids,
+        }
         for copy in copies.order_by("book__title", "inventory_code")
     ]
     return render(
@@ -497,7 +618,7 @@ def loan_create(request):
 @librarian_required
 def librarian_reader_loans(request, reader_id):
     reader = get_object_or_404(
-        User.objects.filter(profile__role=UserProfile.Role.READER),
+        _readers(),
         pk=reader_id,
     )
     active_loans = (
@@ -506,6 +627,7 @@ def librarian_reader_loans(request, reader_id):
         .select_related("copy", "copy__book")
         .order_by("due_date")
     )
+    reader_has_active_loans = active_loans.exists()
     returned_loans = (
         Loan.objects.returned()
         .filter(reader=reader)
@@ -519,6 +641,8 @@ def librarian_reader_loans(request, reader_id):
             "reader": reader,
             "active_loans": active_loans,
             "returned_loans": returned_loans,
+            "can_delete_reader": not reader_has_active_loans
+            and not Loan.objects.filter(reader=reader).exists(),
             "today": timezone.localdate(),
         },
     )
@@ -562,7 +686,7 @@ def loan_due_date(request, loan_id):
 @librarian_required
 def reader_search_api(request):
     query = request.GET.get("q", "").strip()
-    readers = User.objects.filter(profile__role=UserProfile.Role.READER)
+    readers = _readers()
     if query:
         readers = readers.filter(
             Q(username__icontains=query)

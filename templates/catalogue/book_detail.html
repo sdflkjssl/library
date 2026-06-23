@@ -12,9 +12,13 @@
     <div class="heading-actions">
       <span class="badge {{ availability_class }}">{{ availability_label }}</span>
       {% if can_edit %}
-        <a class="button secondary" href="{% url 'book_update' book.id %}">Edit book</a>
         <a class="button" href="{% url 'book_copy_create' book.id %}">Add book copy</a>
-        <a class="button danger" href="{% url 'book_delete' book.id %}">Delete book</a>
+        {% if can_modify_book %}
+          <a class="button secondary" href="{% url 'book_update' book.id %}">Edit book</a>
+        {% endif %}
+        {% if can_delete_book %}
+          <a class="button danger" href="{% url 'book_delete' book.id %}">Delete book</a>
+        {% endif %}
       {% endif %}
     </div>
   </section>
@@ -73,10 +77,16 @@
                 </td>
                 {% if can_edit %}
                   <td class="actions">
-                    <div class="action-group">
-                      <a class="button compact secondary" href="{% url 'book_copy_update' row.copy.id %}">Edit</a>
-                      <a class="button compact danger" href="{% url 'book_copy_delete' row.copy.id %}">Delete</a>
-                    </div>
+                    {% if row.loan %}
+                      <span class="subtle">-</span>
+                    {% else %}
+                      <div class="action-group">
+                        <a class="button compact secondary" href="{% url 'book_copy_update' row.copy.id %}">Edit</a>
+                        {% if not row.has_loan_history %}
+                          <a class="button compact danger" href="{% url 'book_copy_delete' row.copy.id %}">Delete</a>
+                        {% endif %}
+                      </div>
+                    {% endif %}
                   </td>
                 {% endif %}
               </tr>

@@ -68,10 +68,16 @@
                   {% endif %}
                 </td>
                 <td class="actions">
-                  <div class="action-group">
-                    <a class="button compact secondary" href="{% url 'book_copy_update' row.copy.id %}">Edit</a>
-                    <a class="button compact danger" href="{% url 'book_copy_delete' row.copy.id %}">Delete</a>
-                  </div>
+                  {% if row.loan %}
+                    <span class="subtle">-</span>
+                  {% else %}
+                    <div class="action-group">
+                      <a class="button compact secondary" href="{% url 'book_copy_update' row.copy.id %}">Edit</a>
+                      {% if not row.has_loan_history %}
+                        <a class="button compact danger" href="{% url 'book_copy_delete' row.copy.id %}">Delete</a>
+                      {% endif %}
+                    </div>
+                  {% endif %}
                 </td>
               </tr>
             {% endfor %}

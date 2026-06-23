@@ -30,6 +30,16 @@ urlpatterns = [
     path("reader/loans/", views.reader_loans, name="reader_loans"),
     path("librarian/", views.librarian_dashboard, name="librarian_dashboard"),
     path("librarian/readers/", views.readers_list, name="readers_list"),
+    path(
+        "librarian/readers/<int:user_id>/edit/",
+        views.reader_update,
+        name="reader_update",
+    ),
+    path(
+        "librarian/readers/<int:user_id>/delete/",
+        views.reader_delete,
+        name="reader_delete",
+    ),
     path("librarian/librarians/", views.librarians_list, name="librarians_list"),
     path(
         "librarian/librarians/new/",

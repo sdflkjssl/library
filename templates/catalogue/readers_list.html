@@ -34,6 +34,7 @@
               <th>Email</th>
               <th>Active loans</th>
               <th>Overdue</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -49,6 +50,14 @@
                   {% else %}
                     <span class="badge success">0</span>
                   {% endif %}
+                </td>
+                <td class="actions">
+                  <div class="action-group">
+                    <a class="button compact secondary" href="{% url 'reader_update' reader.id %}">Edit</a>
+                    {% if not reader.loan_count %}
+                      <a class="button compact danger" href="{% url 'reader_delete' reader.id %}">Delete</a>
+                    {% endif %}
+                  </div>
                 </td>
               </tr>
             {% endfor %}

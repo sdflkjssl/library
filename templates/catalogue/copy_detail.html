@@ -12,8 +12,12 @@
     <div class="heading-actions">
       <span class="badge {{ availability_class }}">{{ availability_label }}</span>
       {% if can_edit %}
-        <a class="button secondary" href="{% url 'book_copy_update' copy.id %}">Edit copy</a>
-        <a class="button danger" href="{% url 'book_copy_delete' copy.id %}">Delete copy</a>
+        {% if can_modify_copy %}
+          <a class="button secondary" href="{% url 'book_copy_update' copy.id %}">Edit copy</a>
+        {% endif %}
+        {% if can_delete_copy %}
+          <a class="button danger" href="{% url 'book_copy_delete' copy.id %}">Delete copy</a>
+        {% endif %}
       {% endif %}
     </div>
   </section>

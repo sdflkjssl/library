@@ -119,6 +119,13 @@ class LibraryWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("reader_loans"))
 
+    def test_reader_pages_use_reader_view_label(self):
+        self.client.login(username="reader", password="pass")
+
+        response = self.client.get(reverse("reader_loans"))
+
+        self.assertContains(response, "Reader view")
+
     def test_librarian_catalogue_shows_availability_counts(self):
         create_loan(
             reader=self.reader,
@@ -269,6 +276,64 @@ class LibraryWorkflowTests(TestCase):
         self.assertFalse(Book.objects.filter(id=self.book.id).exists())
         self.assertFalse(BookCopy.objects.filter(book_id=self.book.id).exists())
 
+    def test_active_book_and_copy_cannot_be_edited_or_deleted(self):
+        create_loan(
+            reader=self.reader,
+            copy=self.copy,
+            due_date=timezone.localdate() + timedelta(days=7),
+            loaned_by=self.librarian,
+        )
+        self.client.login(username="librarian", password="pass")
+
+        book_update_response = self.client.post(
+            reverse("book_update", args=[self.book.id]),
+            {
+                "title": "Blocked update",
+                "author": self.book.author,
+                "isbn": self.book.isbn,
+                "description": "",
+            },
+        )
+        book_delete_response = self.client.post(reverse("book_delete", args=[self.book.id]))
+        copy_update_response = self.client.post(
+            reverse("book_copy_update", args=[self.copy.id]),
+            {"inventory_code": "CA-001X", "notes": ""},
+        )
+        copy_delete_response = self.client.post(reverse("book_copy_delete", args=[self.copy.id]))
+
+        self.book.refresh_from_db()
+        self.copy.refresh_from_db()
+        self.assertEqual(book_update_response.url, reverse("book_detail", args=[self.book.id]))
+        self.assertEqual(book_delete_response.url, reverse("book_detail", args=[self.book.id]))
+        self.assertEqual(copy_update_response.url, reverse("copy_detail", args=[self.copy.id]))
+        self.assertEqual(copy_delete_response.url, reverse("copy_detail", args=[self.copy.id]))
+        self.assertEqual(self.book.title, "Clean Architecture")
+        self.assertEqual(self.copy.inventory_code, "CA-001")
+        self.assertTrue(Book.objects.filter(id=self.book.id).exists())
+        self.assertTrue(BookCopy.objects.filter(id=self.copy.id).exists())
+
+    def test_active_book_and_copy_actions_are_hidden(self):
+        create_loan(
+            reader=self.reader,
+            copy=self.copy,
+            due_date=timezone.localdate() + timedelta(days=7),
+            loaned_by=self.librarian,
+        )
+        self.client.login(username="librarian", password="pass")
+
+        book_response = self.client.get(reverse("book_detail", args=[self.book.id]))
+        copy_response = self.client.get(reverse("copy_detail", args=[self.copy.id]))
+        copies_response = self.client.get(reverse("book_copies_list"), {"status": "all"})
+
+        self.assertNotContains(book_response, reverse("book_update", args=[self.book.id]))
+        self.assertNotContains(book_response, reverse("book_delete", args=[self.book.id]))
+        self.assertNotContains(book_response, reverse("book_copy_update", args=[self.copy.id]))
+        self.assertNotContains(book_response, reverse("book_copy_delete", args=[self.copy.id]))
+        self.assertNotContains(copy_response, reverse("book_copy_update", args=[self.copy.id]))
+        self.assertNotContains(copy_response, reverse("book_copy_delete", args=[self.copy.id]))
+        self.assertNotContains(copies_response, reverse("book_copy_update", args=[self.copy.id]))
+        self.assertNotContains(copies_response, reverse("book_copy_delete", args=[self.copy.id]))
+
     def test_librarian_can_add_edit_and_delete_book_copy(self):
         self.client.login(username="librarian", password="pass")
 
@@ -314,6 +379,51 @@ class LibraryWorkflowTests(TestCase):
 
         self.assertContains(response, "Readers")
         self.assertContains(response, reverse("librarian_reader_loans", args=[self.reader.id]))
+        self.assertContains(response, reverse("reader_update", args=[self.reader.id]))
+        self.assertContains(response, reverse("reader_delete", args=[self.reader.id]))
+
+    def test_librarian_can_edit_and_delete_reader_account(self):
+        User = get_user_model()
+        self.client.login(username="librarian", password="pass")
+
+        update_response = self.client.post(
+            reverse("reader_update", args=[self.other_reader.id]),
+            {
+                "username": "other-updated",
+                "first_name": "Other",
+                "last_name": "Updated",
+                "email": "other@example.com",
+                "is_active": "on",
+            },
+        )
+        self.other_reader.refresh_from_db()
+        role = self.other_reader.profile.role
+        delete_response = self.client.post(
+            reverse("reader_delete", args=[self.other_reader.id])
+        )
+
+        self.assertEqual(update_response.status_code, 302)
+        self.assertEqual(self.other_reader.username, "other-updated")
+        self.assertEqual(role, UserProfile.Role.READER)
+        self.assertEqual(delete_response.status_code, 302)
+        self.assertFalse(User.objects.filter(username="other-updated").exists())
+
+    def test_reader_with_active_loans_cannot_be_deleted(self):
+        create_loan(
+            reader=self.reader,
+            copy=self.copy,
+            due_date=timezone.localdate() + timedelta(days=7),
+            loaned_by=self.librarian,
+        )
+        self.client.login(username="librarian", password="pass")
+
+        response = self.client.post(reverse("reader_delete", args=[self.reader.id]))
+
+        self.assertEqual(
+            response.url,
+            reverse("librarian_reader_loans", args=[self.reader.id]),
+        )
+        self.assertTrue(get_user_model().objects.filter(id=self.reader.id).exists())
 
     def test_loan_creation_view_accepts_search_picker_ids(self):
         self.client.login(username="librarian", password="pass")
@@ -400,12 +510,15 @@ class LibraryWorkflowTests(TestCase):
         librarian.refresh_from_db()
         role = librarian.profile.role
 
+        list_response = self.client.get(reverse("librarians_list"))
         delete_response = self.client.post(reverse("librarian_delete", args=[librarian.id]))
 
         self.assertEqual(create_response.status_code, 302)
         self.assertEqual(role, UserProfile.Role.LIBRARIAN)
         self.assertEqual(update_response.status_code, 302)
         self.assertEqual(librarian.first_name, "Updated")
+        self.assertContains(list_response, reverse("librarian_update", args=[librarian.id]))
+        self.assertContains(list_response, reverse("librarian_delete", args=[librarian.id]))
         self.assertEqual(delete_response.status_code, 302)
         self.assertFalse(User.objects.filter(username="assistant").exists())
 

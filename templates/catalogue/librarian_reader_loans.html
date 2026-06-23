@@ -9,6 +9,12 @@
       <h1>{{ reader.get_full_name|default:reader.username }}</h1>
       <p class="muted">{{ reader.get_username }}{% if reader.email %} - {{ reader.email }}{% endif %}</p>
     </div>
+    <div class="heading-actions">
+      <a class="button secondary" href="{% url 'reader_update' reader.id %}">Edit reader</a>
+      {% if can_delete_reader %}
+        <a class="button danger" href="{% url 'reader_delete' reader.id %}">Delete reader</a>
+      {% endif %}
+    </div>
   </section>
 
   <section class="panel">
