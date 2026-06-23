@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Create account - Library{% endblock %}
+
+{% block content %}
+  <section class="auth-layout">
+    <div>
+      <p class="eyebrow">Reader account</p>
+      <h1>{% if librarian_creating_reader %}Create reader{% else %}Create an account{% endif %}</h1>
+      <p class="lead">Reader accounts can search the catalogue and view their current loans.</p>
+    </div>
+    <form class="panel form-stack" method="post">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="form-errors">{{ form.non_field_errors }}</div>
+      {% endif %}
+      {% for field in form %}
+        <label>
+          {{ field.label }}
+          {{ field }}
+          {% if field.errors %}<span class="field-error">{{ field.errors|striptags }}</span>{% endif %}
+        </label>
+      {% endfor %}
+      <button class="button primary" type="submit">{% if librarian_creating_reader %}Create reader{% else %}Create account{% endif %}</button>
+      {% if librarian_creating_reader %}
+        <a href="{% url 'librarian_dashboard' %}">Cancel</a>
+      {% else %}
+        <a href="{% url 'login' %}">Already have an account?</a>
+      {% endif %}
+    </form>
+  </section>
+{% endblock %}

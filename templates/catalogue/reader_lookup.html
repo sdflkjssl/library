@@ -11,13 +11,8 @@
   </section>
 
   <form class="panel form-stack narrow" method="get">
-    {% for field in form %}
-      <label>
-        {{ field.label }}
-        {{ field }}
-        {% if field.errors %}<span class="field-error">{{ field.errors|striptags }}</span>{% endif %}
-      </label>
-    {% endfor %}
+    {% url 'api_reader_search' as reader_search_url %}
+    {% include "catalogue/includes/search_picker.html" with field=form.reader selected_label=form.selected_reader_label endpoint=reader_search_url modal_title="Find reader" placeholder="Search by name, username, or email" empty_label="No reader selected" button_text="Find reader" %}
     <button class="button primary" type="submit">Open reader</button>
   </form>
 {% endblock %}

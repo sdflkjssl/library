@@ -5,10 +5,14 @@ A Django prototype for a small library system with separate reader and librarian
 ## Features
 
 - Reader login and librarian login with role-based access control.
+- Public reader signup and librarian-created reader accounts.
 - Catalogue search by title, author, or ISBN.
-- Availability display based on physical book copies, not just book titles.
+- Availability display as available copies over total copies, based on physical book copies.
+- Clickable book and copy detail pages.
 - Reader view of current loans and due dates.
 - Librarian workflows to create loans, register returns, view a reader's active loans, and modify due dates.
+- Search-modal selection for readers and book copies, avoiding oversized dropdowns.
+- Confirmation warning before registering a return.
 - Transaction-wrapped loan operations and a database constraint preventing two active loans for the same copy.
 - Demo seed command and focused automated tests.
 

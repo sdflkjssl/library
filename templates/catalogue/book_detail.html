@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.title }} - Library{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Book</p>
+      <h1>{{ book.title }}</h1>
+      <p class="muted">{{ book.author }} - ISBN {{ book.isbn }}</p>
+    </div>
+    <span class="badge {{ availability_class }}">{{ availability_label }}</span>
+  </section>
+
+  {% if book.description %}
+    <section class="panel">
+      <p class="detail-copy">{{ book.description }}</p>
+    </section>
+  {% endif %}
+
+  <section class="panel">
+    <div class="section-heading">
+      <h2>Copies</h2>
+    </div>
+    {% if copy_rows %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Copy</th>
+              <th>Status</th>
+              {% if can_view_readers %}<th>Current reader</th>{% endif %}
+              <th>Due date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in copy_rows %}
+              <tr>
+                <td><a class="record-link" href="{% url 'copy_detail' row.copy.id %}">{{ row.copy.inventory_code }}</a></td>
+                <td>
+                  {% if row.loan %}
+                    <span class="badge danger">On loan</span>
+                  {% else %}
+                    <span class="badge success">Available</span>
+                  {% endif %}
+                </td>
+                {% if can_view_readers %}
+                  <td>
+                    {% if row.loan %}
+                      <a href="{% url 'librarian_reader_loans' row.loan.reader.id %}">{{ row.loan.reader.get_full_name|default:row.loan.reader.username }}</a>
+                    {% else %}
+                      <span class="subtle">-</span>
+                    {% endif %}
+                  </td>
+                {% endif %}
+                <td>
+                  {% if row.loan %}
+                    {{ row.loan.due_date }}
+                  {% else %}
+                    <span class="subtle">-</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">No physical copies have been registered for this book.</p>
+    {% endif %}
+  </section>
+{% endblock %}

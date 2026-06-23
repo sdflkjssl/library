@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Library{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  <script src="{% static 'js/library-ui.js' %}" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -20,6 +21,7 @@
             <a href="{% url 'librarian_dashboard' %}">Librarian desk</a>
             <a href="{% url 'loan_create' %}">New loan</a>
             <a href="{% url 'reader_lookup' %}">Reader loans</a>
+            <a href="{% url 'signup' %}">New reader</a>
           {% endif %}
         </nav>
         <div class="account">
@@ -43,5 +45,30 @@
     {% endif %}
     {% block content %}{% endblock %}
   </main>
+
+  <div class="modal-backdrop" data-search-modal hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="search-modal-title">
+      <div class="modal-header">
+        <h2 id="search-modal-title">Search</h2>
+        <button class="icon-button" type="button" data-search-close aria-label="Close search">x</button>
+      </div>
+      <input data-search-input type="search" placeholder="Search" autocomplete="off">
+      <div class="search-results" data-search-results></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" data-confirm-modal hidden>
+    <section class="modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+      <div class="modal-header">
+        <h2 id="confirm-modal-title">Confirm action</h2>
+        <button class="icon-button" type="button" data-confirm-cancel aria-label="Close confirmation">x</button>
+      </div>
+      <p data-confirm-body></p>
+      <div class="modal-actions">
+        <button class="button secondary" type="button" data-confirm-cancel>Cancel</button>
+        <button class="button danger" type="button" data-confirm-submit>Confirm</button>
+      </div>
+    </section>
+  </div>
 </body>
 </html>

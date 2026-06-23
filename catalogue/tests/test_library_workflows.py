@@ -122,5 +122,86 @@ class LibraryWorkflowTests(TestCase):
 
         response = self.client.get(reverse("catalogue"), {"q": "Clean"})
 
-        self.assertContains(response, "1 available")
-        self.assertContains(response, "2 total")
+        self.assertContains(response, "1/2")
+        self.assertContains(response, reverse("book_detail", args=[self.book.id]))
+
+    def test_librarian_can_search_available_copies_for_modal(self):
+        create_loan(
+            reader=self.reader,
+            copy=self.copy,
+            due_date=timezone.localdate() + timedelta(days=7),
+            loaned_by=self.librarian,
+        )
+        self.client.login(username="librarian", password="pass")
+
+        response = self.client.get(reverse("api_copy_search"), {"q": "Clean"})
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(len(payload["items"]), 1)
+        self.assertEqual(payload["items"][0]["meta"], "Copy CA-002")
+        self.assertEqual(payload["items"][0]["availability"], "1/2")
+
+    def test_librarian_can_search_readers_for_modal(self):
+        self.client.login(username="librarian", password="pass")
+
+        response = self.client.get(reverse("api_reader_search"), {"q": "read"})
+
+        self.assertEqual(response.status_code, 200)
+        titles = [item["title"] for item in response.json()["items"]]
+        self.assertIn("reader", titles)
+
+    def test_loan_creation_view_accepts_search_picker_ids(self):
+        self.client.login(username="librarian", password="pass")
+
+        response = self.client.post(
+            reverse("loan_create"),
+            {
+                "reader": self.reader.id,
+                "copy": self.copy.id,
+                "due_date": timezone.localdate() + timedelta(days=7),
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Loan.objects.active().filter(reader=self.reader, copy=self.copy).exists())
+
+    def test_signup_creates_reader_account(self):
+        User = get_user_model()
+
+        response = self.client.post(
+            reverse("signup"),
+            {
+                "username": "newreader",
+                "first_name": "New",
+                "last_name": "Reader",
+                "email": "new@example.com",
+                "password1": "NewReaderDemo123!",
+                "password2": "NewReaderDemo123!",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        user = User.objects.get(username="newreader")
+        self.assertEqual(user.profile.role, UserProfile.Role.READER)
+
+    def test_librarian_can_create_reader_without_switching_session(self):
+        User = get_user_model()
+        self.client.login(username="librarian", password="pass")
+
+        response = self.client.post(
+            reverse("signup"),
+            {
+                "username": "deskreader",
+                "first_name": "Desk",
+                "last_name": "Reader",
+                "email": "",
+                "password1": "SecureLibraryPass987!",
+                "password2": "SecureLibraryPass987!",
+            },
+        )
+
+        user = User.objects.get(username="deskreader")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("librarian_reader_loans", args=[user.id]))
+        self.assertEqual(user.profile.role, UserProfile.Role.READER)

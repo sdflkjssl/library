@@ -40,12 +40,14 @@ a:hover {
 
 input,
 select,
+textarea,
 button {
   font: inherit;
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -55,7 +57,8 @@ select {
 }
 
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   outline: 3px solid rgba(23, 107, 135, 0.18);
   border-color: var(--primary);
 }
@@ -217,10 +220,15 @@ td span {
 .inline-form,
 .search-bar,
 .form-actions,
-.actions {
+.action-group,
+.modal-actions {
   display: flex;
   align-items: center;
   gap: 0.65rem;
+}
+
+.inline-form .search-picker {
+  flex: 1;
 }
 
 .search-bar {
@@ -264,6 +272,12 @@ td span {
   background: var(--surface-soft);
 }
 
+.button.danger {
+  background: var(--danger-text);
+  border-color: var(--danger-text);
+  color: #fff;
+}
+
 .button.compact {
   min-height: 34px;
   padding: 0.42rem 0.7rem;
@@ -296,6 +310,25 @@ th {
 td strong,
 td span {
   display: block;
+}
+
+.record-link {
+  display: inline-block;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.record-link:hover {
+  color: var(--primary);
+}
+
+.actions {
+  min-width: 210px;
+}
+
+.action-group {
+  justify-content: flex-start;
+  white-space: nowrap;
 }
 
 tr:last-child td {
@@ -412,14 +445,156 @@ tr:last-child td {
   color: var(--muted);
 }
 
+.detail-copy {
+  margin: 0;
+  color: var(--muted);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.detail-label {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.search-picker {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.picker-label {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.picker-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.65rem;
+}
+
+.picker-selected {
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 0.65rem 0.85rem;
+}
+
+.picker-selected strong,
+.picker-selected span {
+  display: block;
+}
+
+.picker-selected span {
+  color: var(--muted);
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: rgba(24, 32, 42, 0.4);
+  padding: 1rem;
+}
+
+.modal-backdrop[hidden] {
+  display: none;
+}
+
+.modal {
+  width: min(680px, 100%);
+  max-height: min(720px, calc(100vh - 2rem));
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 24px 60px rgba(20, 31, 43, 0.22);
+  padding: 1rem;
+}
+
+.confirm-modal {
+  width: min(520px, 100%);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.icon-button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.search-results {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.search-result {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0.8rem;
+  text-align: left;
+}
+
+.search-result:hover {
+  border-color: var(--primary);
+  background: var(--surface-soft);
+}
+
+.search-result-main {
+  display: block;
+  min-width: 0;
+}
+
+.search-result-main strong,
+.search-result-main span {
+  display: block;
+}
+
+.search-result-main span {
+  color: var(--muted);
+  font-weight: 500;
+}
+
 @media (max-width: 760px) {
   .nav,
   .nav-links,
   .account,
   .page-heading,
+  .inline-form,
   .search-bar,
-  .actions,
-  .form-actions {
+  .action-group,
+  .form-actions,
+  .modal-actions {
     align-items: stretch;
     flex-direction: column;
   }
@@ -443,12 +618,18 @@ tr:last-child td {
 
   .stats-grid,
   .split-panel,
-  .auth-layout {
+  .auth-layout,
+  .detail-grid {
     grid-template-columns: 1fr;
   }
 
   .button,
-  .inline-form {
+  .inline-form,
+  .picker-control {
     width: 100%;
+  }
+
+  .picker-control {
+    grid-template-columns: 1fr;
   }
 }

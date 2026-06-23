@@ -30,10 +30,10 @@
             {% for loan in active_loans %}
               <tr>
                 <td>
-                  <strong>{{ loan.copy.book.title }}</strong>
+                  <a class="record-link" href="{% url 'book_detail' loan.copy.book.id %}">{{ loan.copy.book.title }}</a>
                   <span>{{ loan.copy.book.author }}</span>
                 </td>
-                <td>{{ loan.copy.inventory_code }}</td>
+                <td><a href="{% url 'copy_detail' loan.copy.id %}">{{ loan.copy.inventory_code }}</a></td>
                 <td>
                   <span class="badge {% if loan.is_overdue %}danger{% else %}neutral{% endif %}">
                     {{ loan.due_date }}

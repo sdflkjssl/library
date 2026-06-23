@@ -38,18 +38,17 @@
             {% for book in books %}
               <tr>
                 <td>
-                  <strong>{{ book.title }}</strong>
+                  <a class="record-link" href="{% url 'book_detail' book.id %}">{{ book.title }}</a>
                   {% if book.description %}<span>{{ book.description|truncatechars:90 }}</span>{% endif %}
                 </td>
                 <td>{{ book.author }}</td>
                 <td>{{ book.isbn }}</td>
                 <td>
                   {% if book.available_copies > 0 %}
-                    <span class="badge success">{{ book.available_copies }} available</span>
+                    <span class="badge success">{{ book.available_copies }}/{{ book.total_copies }}</span>
                   {% else %}
-                    <span class="badge warning">On loan</span>
+                    <span class="badge danger">{{ book.available_copies }}/{{ book.total_copies }}</span>
                   {% endif %}
-                  <span class="subtle">{{ book.total_copies }} total</span>
                 </td>
               </tr>
             {% endfor %}

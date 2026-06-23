@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}{{ copy.inventory_code }} - Library{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Book copy</p>
+      <h1>{{ copy.inventory_code }}</h1>
+      <p class="muted"><a href="{% url 'book_detail' book.id %}">{{ book.title }}</a> - {{ book.author }}</p>
+    </div>
+    <span class="badge {{ availability_class }}">{{ availability_label }}</span>
+  </section>
+
+  <section class="panel">
+    <div class="detail-grid">
+      <div>
+        <span class="detail-label">Copy status</span>
+        {% if active_loan %}
+          <strong>On loan</strong>
+        {% else %}
+          <strong>Available</strong>
+        {% endif %}
+      </div>
+      <div>
+        <span class="detail-label">ISBN</span>
+        <strong>{{ book.isbn }}</strong>
+      </div>
+      {% if can_view_loan %}
+        <div>
+          <span class="detail-label">Reader</span>
+          {% if can_view_readers %}
+            <a class="record-link" href="{% url 'librarian_reader_loans' active_loan.reader.id %}">{{ active_loan.reader.get_full_name|default:active_loan.reader.username }}</a>
+          {% else %}
+            <strong>{{ active_loan.reader.get_full_name|default:active_loan.reader.username }}</strong>
+          {% endif %}
+        </div>
+        <div>
+          <span class="detail-label">Due date</span>
+          <strong>{{ active_loan.due_date }}</strong>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

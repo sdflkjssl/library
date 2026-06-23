@@ -1,0 +1,18 @@
+<div class="search-picker" data-search-picker data-endpoint="{{ endpoint }}" data-target-input="{{ field.id_for_label }}" data-title="{{ modal_title }}" data-placeholder="{{ placeholder }}">
+  {{ field }}
+  <label class="picker-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+  <div class="picker-control">
+    <div class="picker-selected" data-picker-selected>
+      {% if selected_label %}
+        <strong>{{ selected_label }}</strong>
+        <span>Selected</span>
+      {% else %}
+        <span>{{ empty_label }}</span>
+      {% endif %}
+    </div>
+    <button class="button secondary" type="button" data-picker-open>{{ button_text }}</button>
+  </div>
+  {% if field.errors %}
+    <span class="field-error">{{ field.errors|striptags }}</span>
+  {% endif %}
+</div>

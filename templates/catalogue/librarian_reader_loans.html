@@ -7,6 +7,7 @@
     <div>
       <p class="eyebrow">Librarian</p>
       <h1>{{ reader.get_full_name|default:reader.username }}</h1>
+      <p class="muted">{{ reader.get_username }}{% if reader.email %} - {{ reader.email }}{% endif %}</p>
     </div>
     <a class="button primary" href="{% url 'loan_create' %}">Register another loan</a>
   </section>
@@ -31,10 +32,10 @@
             {% for loan in active_loans %}
               <tr>
                 <td>
-                  <strong>{{ loan.copy.book.title }}</strong>
+                  <a class="record-link" href="{% url 'book_detail' loan.copy.book.id %}">{{ loan.copy.book.title }}</a>
                   <span>{{ loan.copy.book.author }}</span>
                 </td>
-                <td>{{ loan.copy.inventory_code }}</td>
+                <td><a href="{% url 'copy_detail' loan.copy.id %}">{{ loan.copy.inventory_code }}</a></td>
                 <td>{{ loan.due_date }}</td>
                 <td>
                   {% if loan.is_overdue %}
@@ -44,11 +45,13 @@
                   {% endif %}
                 </td>
                 <td class="actions">
-                  <a class="button compact secondary" href="{% url 'loan_due_date' loan.id %}">Edit date</a>
-                  <form method="post" action="{% url 'loan_return' loan.id %}">
-                    {% csrf_token %}
-                    <button class="button compact" type="submit">Return</button>
-                  </form>
+                  <div class="action-group">
+                    <a class="button compact secondary" href="{% url 'loan_due_date' loan.id %}">Edit date</a>
+                    <form method="post" action="{% url 'loan_return' loan.id %}" data-confirm-return data-confirm-title="Return book" data-confirm-message="Return {{ loan.copy.book.title }} from {{ reader.get_full_name|default:reader.username }}? This will close the active loan.">
+                      {% csrf_token %}
+                      <button class="button compact" type="submit">Return</button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             {% endfor %}
@@ -78,10 +81,10 @@
             {% for loan in returned_loans %}
               <tr>
                 <td>
-                  <strong>{{ loan.copy.book.title }}</strong>
+                  <a class="record-link" href="{% url 'book_detail' loan.copy.book.id %}">{{ loan.copy.book.title }}</a>
                   <span>{{ loan.copy.book.author }}</span>
                 </td>
-                <td>{{ loan.copy.inventory_code }}</td>
+                <td><a href="{% url 'copy_detail' loan.copy.id %}">{{ loan.copy.inventory_code }}</a></td>
                 <td>{{ loan.returned_at|date:"Y-m-d" }}</td>
               </tr>
             {% endfor %}
