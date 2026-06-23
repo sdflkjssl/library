@@ -40,20 +40,22 @@
         </nav>
         {% endwith %}
       {% endif %}
-      <div class="theme-switcher" role="group" aria-label="Theme">
-        <button type="button" data-theme-option="system">System</button>
-        <button type="button" data-theme-option="light">Light</button>
-        <button type="button" data-theme-option="dark">Dark</button>
-      </div>
-      {% if user.is_authenticated %}
-        <div class="account">
-          <span>{{ user.get_username }}</span>
-          <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button class="link-button" type="submit">Sign out</button>
-          </form>
+      <div class="nav-controls">
+        <div class="theme-switcher" role="group" aria-label="Theme">
+          <button type="button" data-theme-option="system">System</button>
+          <button type="button" data-theme-option="light">Light</button>
+          <button type="button" data-theme-option="dark">Dark</button>
         </div>
-      {% endif %}
+        {% if user.is_authenticated %}
+          <div class="account">
+            <span>{{ user.get_username }}</span>
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button class="link-button" type="submit">Sign out</button>
+            </form>
+          </div>
+        {% endif %}
+      </div>
     </div>
   </header>
 

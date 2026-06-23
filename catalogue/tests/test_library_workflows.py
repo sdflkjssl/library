@@ -7,6 +7,12 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from catalogue.forms import (
+    LibrarianCreateForm,
+    LibrarianUpdateForm,
+    ReaderSignupForm,
+    ReaderUpdateForm,
+)
 from catalogue.models import Book, BookCopy, Loan, UserProfile
 from catalogue.services import change_due_date, create_loan, return_loan
 
@@ -121,15 +127,43 @@ class LibraryWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("reader_loans"))
 
-    def test_password_policy_only_requires_mixed_character_types(self):
-        validate_password("Aa1!")
+    def test_password_policy_requires_min_length_and_mixed_character_types(self):
+        validate_password("Valid1!a")
 
+        with self.assertRaises(ValidationError):
+            validate_password("Aa1!")
         with self.assertRaises(ValidationError):
             validate_password("lowercase1!")
         with self.assertRaises(ValidationError):
             validate_password("NoNumber!")
         with self.assertRaises(ValidationError):
             validate_password("NoSymbol1")
+
+    def test_account_username_forms_use_short_limit(self):
+        for form_class in (
+            ReaderSignupForm,
+            LibrarianCreateForm,
+            ReaderUpdateForm,
+            LibrarianUpdateForm,
+        ):
+            form = form_class()
+            self.assertEqual(form.fields["username"].max_length, 40)
+            self.assertEqual(form.fields["username"].widget.attrs["maxlength"], "40")
+            self.assertIn("40 characters or fewer", form.fields["username"].help_text)
+
+        form = ReaderSignupForm(
+            data={
+                "username": "u" * 41,
+                "first_name": "Long",
+                "last_name": "Username",
+                "email": "",
+                "password1": "ValidPass1!",
+                "password2": "ValidPass1!",
+            }
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("40 characters", form.errors["username"][0])
 
     def test_theme_switcher_renders_on_public_pages(self):
         response = self.client.get(reverse("login"))

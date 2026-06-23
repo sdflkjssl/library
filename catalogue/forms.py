@@ -3,12 +3,31 @@ from datetime import timedelta
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.utils import timezone
 
 from .models import Book, BookCopy, UserProfile
 
 
 User = get_user_model()
+username_validator = UnicodeUsernameValidator()
+USERNAME_MAX_LENGTH = 40
+USERNAME_HELP_TEXT = (
+    "Required. 40 characters or fewer. Letters, digits and @/./+/-/_ only."
+)
+
+
+def account_username_field():
+    return forms.CharField(
+        label="Username",
+        max_length=USERNAME_MAX_LENGTH,
+        help_text=USERNAME_HELP_TEXT,
+        validators=[username_validator],
+        error_messages={
+            "unique": "A user with that username already exists.",
+            "max_length": "Username must be 40 characters or fewer.",
+        },
+    )
 
 
 class DateInput(forms.DateInput):
@@ -148,6 +167,7 @@ class DueDateForm(forms.Form):
 
 
 class ReaderSignupForm(UserCreationForm):
+    username = account_username_field()
     first_name = forms.CharField(max_length=150, label="First name")
     last_name = forms.CharField(max_length=150, label="Last name")
     email = forms.EmailField(label="Email", required=False)
@@ -170,6 +190,7 @@ class ReaderSignupForm(UserCreationForm):
 
 
 class LibrarianCreateForm(UserCreationForm):
+    username = account_username_field()
     first_name = forms.CharField(max_length=150, label="First name")
     last_name = forms.CharField(max_length=150, label="Last name")
     email = forms.EmailField(label="Email", required=False)
@@ -193,12 +214,16 @@ class LibrarianCreateForm(UserCreationForm):
 
 
 class LibrarianUpdateForm(forms.ModelForm):
+    username = account_username_field()
+
     class Meta:
         model = User
         fields = ("username", "first_name", "last_name", "email")
 
 
 class ReaderUpdateForm(forms.ModelForm):
+    username = account_username_field()
+
     class Meta:
         model = User
         fields = ("username", "first_name", "last_name", "email")
