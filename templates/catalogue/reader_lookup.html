@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Reader loans - Library{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Librarian</p>
+      <h1>Open reader loans</h1>
+    </div>
+  </section>
+
+  <form class="panel form-stack narrow" method="get">
+    {% for field in form %}
+      <label>
+        {{ field.label }}
+        {{ field }}
+        {% if field.errors %}<span class="field-error">{{ field.errors|striptags }}</span>{% endif %}
+      </label>
+    {% endfor %}
+    <button class="button primary" type="submit">Open reader</button>
+  </form>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Librarian desk - Library{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Librarian</p>
+      <h1>Librarian desk</h1>
+    </div>
+    <a class="button primary" href="{% url 'loan_create' %}">Register loan</a>
+  </section>
+
+  <section class="stats-grid">
+    <div class="stat">
+      <span>Active loans</span>
+      <strong>{{ stats.active_loans }}</strong>
+    </div>
+    <div class="stat">
+      <span>Overdue</span>
+      <strong>{{ stats.overdue_loans }}</strong>
+    </div>
+    <div class="stat">
+      <span>Available copies</span>
+      <strong>{{ stats.available_copies }}</strong>
+    </div>
+    <div class="stat">
+      <span>Readers</span>
+      <strong>{{ stats.readers }}</strong>
+    </div>
+  </section>
+
+  <section class="panel split-panel">
+    <div>
+      <h2>Find reader loans</h2>
+      <p class="muted">Open a reader record to view active loans, register returns, or edit due dates.</p>
+    </div>
+    <form class="inline-form" method="get" action="{% url 'reader_lookup' %}">
+      {{ reader_lookup_form.reader }}
+      <button class="button primary" type="submit">Open</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div class="section-heading">
+      <h2>Current loans</h2>
+      <a href="{% url 'reader_lookup' %}">View by reader</a>
+    </div>
+    {% if active_loans %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Reader</th>
+              <th>Book</th>
+              <th>Due date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for loan in active_loans %}
+              <tr>
+                <td>{{ loan.reader.get_full_name|default:loan.reader.username }}</td>
+                <td>
+                  <strong>{{ loan.copy.book.title }}</strong>
+                  <span>{{ loan.copy.inventory_code }}</span>
+                </td>
+                <td>
+                  <span class="badge {% if loan.is_overdue %}danger{% else %}neutral{% endif %}">
+                    {{ loan.due_date }}
+                  </span>
+                </td>
+                <td class="actions">
+                  <a class="button compact secondary" href="{% url 'loan_due_date' loan.id %}">Edit date</a>
+                  <form method="post" action="{% url 'loan_return' loan.id %}">
+                    {% csrf_token %}
+                    <button class="button compact" type="submit">Return</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">There are no active loans.</p>
+    {% endif %}
+  </section>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Edit due date - Library{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Librarian</p>
+      <h1>Edit due date</h1>
+    </div>
+  </section>
+
+  <form class="panel form-stack narrow" method="post">
+    {% csrf_token %}
+    <div class="loan-summary">
+      <strong>{{ loan.copy.book.title }}</strong>
+      <span>{{ loan.reader.get_full_name|default:loan.reader.username }} - {{ loan.copy.inventory_code }}</span>
+    </div>
+    {% if form.non_field_errors %}
+      <div class="form-errors">{{ form.non_field_errors }}</div>
+    {% endif %}
+    {% for field in form %}
+      <label>
+        {{ field.label }}
+        {{ field }}
+        {% if field.errors %}<span class="field-error">{{ field.errors|striptags }}</span>{% endif %}
+      </label>
+    {% endfor %}
+    <div class="form-actions">
+      <button class="button primary" type="submit">Save due date</button>
+      <a class="button secondary" href="{% url 'librarian_reader_loans' loan.reader_id %}">Cancel</a>
+    </div>
+  </form>
+{% endblock %}

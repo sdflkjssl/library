@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Catalogue - Library{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Catalogue</p>
+      <h1>Find a book</h1>
+    </div>
+  </section>
+
+  <form class="search-bar" method="get">
+    {{ form.q }}
+    <button class="button primary" type="submit">Search</button>
+    {% if query %}
+      <a class="button secondary" href="{% url 'catalogue' %}">Clear</a>
+    {% endif %}
+  </form>
+
+  <section class="panel">
+    <div class="section-heading">
+      <h2>Books</h2>
+      <span>{{ books|length }} result{{ books|length|pluralize }}</span>
+    </div>
+    {% if books %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Author</th>
+              <th>ISBN</th>
+              <th>Availability</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for book in books %}
+              <tr>
+                <td>
+                  <strong>{{ book.title }}</strong>
+                  {% if book.description %}<span>{{ book.description|truncatechars:90 }}</span>{% endif %}
+                </td>
+                <td>{{ book.author }}</td>
+                <td>{{ book.isbn }}</td>
+                <td>
+                  {% if book.available_copies > 0 %}
+                    <span class="badge success">{{ book.available_copies }} available</span>
+                  {% else %}
+                    <span class="badge warning">On loan</span>
+                  {% endif %}
+                  <span class="subtle">{{ book.total_copies }} total</span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">No books matched your search.</p>
+    {% endif %}
+  </section>
+{% endblock %}

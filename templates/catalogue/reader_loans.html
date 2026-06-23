@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}My loans - Library{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Reader</p>
+      <h1>My loans</h1>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="section-heading">
+      <h2>Currently on loan</h2>
+    </div>
+    {% if active_loans %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Book</th>
+              <th>Copy</th>
+              <th>Due date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for loan in active_loans %}
+              <tr>
+                <td>
+                  <strong>{{ loan.copy.book.title }}</strong>
+                  <span>{{ loan.copy.book.author }}</span>
+                </td>
+                <td>{{ loan.copy.inventory_code }}</td>
+                <td>{{ loan.due_date }}</td>
+                <td>
+                  {% if loan.is_overdue %}
+                    <span class="badge danger">Overdue</span>
+                  {% else %}
+                    <span class="badge success">On time</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">You do not currently have any books on loan.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <div class="section-heading">
+      <h2>Recent returns</h2>
+    </div>
+    {% if returned_loans %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Book</th>
+              <th>Returned</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for loan in returned_loans %}
+              <tr>
+                <td>
+                  <strong>{{ loan.copy.book.title }}</strong>
+                  <span>{{ loan.copy.book.author }}</span>
+                </td>
+                <td>{{ loan.returned_at|date:"Y-m-d" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">No returned loans yet.</p>
+    {% endif %}
+  </section>
+{% endblock %}

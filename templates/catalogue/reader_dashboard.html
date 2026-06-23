@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Reader dashboard - Library{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Reader</p>
+      <h1>Welcome back, {{ user.first_name|default:user.username }}</h1>
+    </div>
+    <a class="button primary" href="{% url 'catalogue' %}">Search catalogue</a>
+  </section>
+
+  <section class="panel">
+    <div class="section-heading">
+      <h2>Current loans</h2>
+      <a href="{% url 'reader_loans' %}">View all</a>
+    </div>
+    {% if active_loans %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Book</th>
+              <th>Copy</th>
+              <th>Due date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for loan in active_loans %}
+              <tr>
+                <td>
+                  <strong>{{ loan.copy.book.title }}</strong>
+                  <span>{{ loan.copy.book.author }}</span>
+                </td>
+                <td>{{ loan.copy.inventory_code }}</td>
+                <td>
+                  <span class="badge {% if loan.is_overdue %}danger{% else %}neutral{% endif %}">
+                    {{ loan.due_date }}
+                  </span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">You do not currently have any books on loan.</p>
+    {% endif %}
+  </section>
+{% endblock %}

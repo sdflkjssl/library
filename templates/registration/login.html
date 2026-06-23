@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in - Library{% endblock %}
+
+{% block content %}
+  <section class="auth-layout">
+    <div>
+      <p class="eyebrow">Library prototype</p>
+      <h1>Sign in</h1>
+      <p class="lead">Use a reader or librarian demo account to manage loans and catalogue availability.</p>
+    </div>
+    <form class="panel form-stack" method="post">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="form-errors">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <label>
+        Username
+        {{ form.username }}
+      </label>
+      <label>
+        Password
+        {{ form.password }}
+      </label>
+      <button class="button primary" type="submit">Sign in</button>
+    </form>
+  </section>
+{% endblock %}
