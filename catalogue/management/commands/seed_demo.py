@@ -113,7 +113,7 @@ class Command(BaseCommand):
         self._active_loan(
             reader=reader,
             copy=copy_by_code["DDIA-001"],
-            due_date=timezone.localdate() + timedelta(days=10),
+            due_date=timezone.localdate() - timedelta(days=3),
             librarian=librarian,
         )
         self._active_loan(

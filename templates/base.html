@@ -18,9 +18,10 @@
           {% if user.profile.role == "reader" %}
             <a href="{% url 'reader_loans' %}">My loans</a>
           {% elif user.profile.role == "librarian" or user.is_superuser %}
-            <a href="{% url 'librarian_dashboard' %}">Librarian desk</a>
+            <a href="{% url 'librarian_dashboard' %}">Loans</a>
+            <a href="{% url 'book_copies_list' %}">Book copies</a>
+            <a href="{% url 'readers_list' %}">Readers</a>
             <a href="{% url 'loan_create' %}">New loan</a>
-            <a href="{% url 'reader_lookup' %}">Reader loans</a>
             <a href="{% url 'signup' %}">New reader</a>
           {% endif %}
         </nav>

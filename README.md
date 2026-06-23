@@ -10,7 +10,9 @@ A Django prototype for a small library system with separate reader and librarian
 - Availability display as available copies over total copies, based on physical book copies.
 - Clickable book and copy detail pages.
 - Reader view of current loans and due dates.
+- Librarian `Loans` view with active and overdue filters.
 - Librarian workflows to create loans, register returns, view a reader's active loans, and modify due dates.
+- Reader and book-copy index pages for librarian users, including an available/all copy filter.
 - Search-modal selection for readers and book copies, avoiding oversized dropdowns.
 - Confirmation warning before registering a return.
 - Transaction-wrapped loan operations and a database constraint preventing two active loans for the same copy.

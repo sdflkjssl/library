@@ -83,33 +83,6 @@ class LoanCreateForm(forms.Form):
         return due_date
 
 
-class ReaderLookupForm(forms.Form):
-    reader = forms.ModelChoiceField(
-        queryset=User.objects.none(),
-        label="Reader",
-        widget=forms.HiddenInput,
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["reader"].queryset = User.objects.filter(
-            profile__role=UserProfile.Role.READER
-        ).order_by("last_name", "first_name", "username")
-        self.selected_reader_label = self._reader_label()
-
-    def _reader_label(self):
-        value = self.data.get(self.add_prefix("reader")) if self.is_bound else None
-        if not value:
-            return ""
-        try:
-            reader = self.fields["reader"].queryset.filter(pk=value).first()
-        except (TypeError, ValueError):
-            return ""
-        if not reader:
-            return ""
-        return reader.get_full_name() or reader.get_username()
-
-
 class DueDateForm(forms.Form):
     due_date = forms.DateField(label="New due date", widget=DateInput)
 

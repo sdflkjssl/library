@@ -13,7 +13,6 @@ from .forms import (
     CatalogueSearchForm,
     DueDateForm,
     LoanCreateForm,
-    ReaderLookupForm,
     ReaderSignupForm,
 )
 from .models import Book, BookCopy, Loan, UserProfile
@@ -171,11 +170,15 @@ def reader_loans(request):
 
 @librarian_required
 def librarian_dashboard(request):
-    active_loans = (
-        Loan.objects.active()
-        .select_related("reader", "copy", "copy__book")
-        .order_by("due_date")[:12]
-    )
+    status = request.GET.get("status", "active")
+    loans = Loan.objects.active().select_related("reader", "copy", "copy__book")
+    if status == "overdue":
+        loans = loans.filter(due_date__lt=timezone.localdate())
+        list_title = "Overdue loans"
+    else:
+        status = "active"
+        list_title = "Active loans"
+
     stats = {
         "active_loans": Loan.objects.active().count(),
         "overdue_loans": Loan.objects.overdue().count(),
@@ -188,10 +191,67 @@ def librarian_dashboard(request):
         request,
         "catalogue/librarian_dashboard.html",
         {
-            "active_loans": active_loans,
-            "reader_lookup_form": ReaderLookupForm(),
+            "loans": loans.order_by("due_date", "reader__last_name", "reader__username"),
+            "list_title": list_title,
+            "status": status,
             "stats": stats,
         },
+    )
+
+
+@librarian_required
+def readers_list(request):
+    query = request.GET.get("q", "").strip()
+    readers = User.objects.filter(profile__role=UserProfile.Role.READER)
+    if query:
+        readers = readers.filter(
+            Q(username__icontains=query)
+            | Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+            | Q(email__icontains=query)
+        )
+    readers = readers.annotate(
+        active_loan_count=Count("loans", filter=Q(loans__returned_at__isnull=True)),
+        overdue_loan_count=Count(
+            "loans",
+            filter=Q(
+                loans__returned_at__isnull=True,
+                loans__due_date__lt=timezone.localdate(),
+            ),
+        ),
+    ).order_by("last_name", "first_name", "username")
+    return render(
+        request,
+        "catalogue/readers_list.html",
+        {"readers": readers, "query": query},
+    )
+
+
+@librarian_required
+def book_copies_list(request):
+    status = request.GET.get("status", "all")
+    if status == "available":
+        copies = BookCopy.objects.available().select_related("book")
+        title = "Available book copies"
+    else:
+        status = "all"
+        copies = BookCopy.objects.with_active_loan_flag().select_related("book")
+        title = "Book copies"
+
+    active_loans = {
+        loan.copy_id: loan
+        for loan in Loan.objects.active()
+        .filter(copy_id__in=copies.values("id"))
+        .select_related("reader", "copy", "copy__book")
+    }
+    copy_rows = [
+        {"copy": copy, "loan": active_loans.get(copy.id)}
+        for copy in copies.order_by("book__title", "inventory_code")
+    ]
+    return render(
+        request,
+        "catalogue/book_copies_list.html",
+        {"copy_rows": copy_rows, "status": status, "title": title},
     )
 
 
@@ -216,15 +276,6 @@ def loan_create(request):
             return redirect("librarian_reader_loans", reader_id=loan.reader_id)
 
     return render(request, "catalogue/loan_form.html", {"form": form})
-
-
-@librarian_required
-def reader_lookup(request):
-    form = ReaderLookupForm(request.GET or None)
-    if form.is_valid():
-        reader = form.cleaned_data["reader"]
-        return redirect("librarian_reader_loans", reader_id=reader.pk)
-    return render(request, "catalogue/reader_lookup.html", {"form": form})
 
 
 @librarian_required

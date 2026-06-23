@@ -151,6 +151,62 @@ class LibraryWorkflowTests(TestCase):
         titles = [item["title"] for item in response.json()["items"]]
         self.assertIn("reader", titles)
 
+    def test_loans_page_filters_active_and_overdue_loans(self):
+        overdue_loan = Loan.objects.create(
+            reader=self.reader,
+            copy=self.copy,
+            due_date=timezone.localdate() - timedelta(days=1),
+            loaned_by=self.librarian,
+        )
+        active_loan = create_loan(
+            reader=self.other_reader,
+            copy=self.second_copy,
+            due_date=timezone.localdate() + timedelta(days=7),
+            loaned_by=self.librarian,
+        )
+        self.client.login(username="librarian", password="pass")
+
+        active_response = self.client.get(reverse("librarian_dashboard"), {"status": "active"})
+        overdue_response = self.client.get(reverse("librarian_dashboard"), {"status": "overdue"})
+
+        self.assertContains(active_response, "Active loans")
+        self.assertContains(active_response, "Book copy")
+        self.assertContains(active_response, overdue_loan.copy.inventory_code)
+        self.assertContains(active_response, active_loan.copy.inventory_code)
+        self.assertContains(overdue_response, "Overdue loans")
+        self.assertContains(overdue_response, overdue_loan.copy.inventory_code)
+        self.assertNotContains(overdue_response, active_loan.copy.inventory_code)
+        self.assertContains(overdue_response, "row-overdue")
+
+    def test_book_copies_page_filters_available_and_all_copies(self):
+        create_loan(
+            reader=self.reader,
+            copy=self.copy,
+            due_date=timezone.localdate() + timedelta(days=7),
+            loaned_by=self.librarian,
+        )
+        self.client.login(username="librarian", password="pass")
+
+        available_response = self.client.get(
+            reverse("book_copies_list"),
+            {"status": "available"},
+        )
+        all_response = self.client.get(reverse("book_copies_list"), {"status": "all"})
+
+        self.assertContains(available_response, self.second_copy.inventory_code)
+        self.assertNotContains(available_response, self.copy.inventory_code)
+        self.assertContains(available_response, "All copies")
+        self.assertContains(all_response, self.copy.inventory_code)
+        self.assertContains(all_response, self.second_copy.inventory_code)
+
+    def test_readers_page_lists_readers_and_links_to_reader_loans(self):
+        self.client.login(username="librarian", password="pass")
+
+        response = self.client.get(reverse("readers_list"))
+
+        self.assertContains(response, "Readers")
+        self.assertContains(response, reverse("librarian_reader_loans", args=[self.reader.id]))
+
     def test_loan_creation_view_accepts_search_picker_ids(self):
         self.client.login(username="librarian", password="pass")
 

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Book copies - Library{% endblock %}
+
+{% block content %}
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">Librarian view</p>
+      <h1>{{ title }}</h1>
+    </div>
+    <a class="button primary" href="{% url 'loan_create' %}">Register loan</a>
+  </section>
+
+  <nav class="segmented" aria-label="Book copy filter">
+    <a class="{% if status == 'all' %}active{% endif %}" href="{% url 'book_copies_list' %}?status=all">All copies</a>
+    <a class="{% if status == 'available' %}active{% endif %}" href="{% url 'book_copies_list' %}?status=available">Available</a>
+  </nav>
+
+  <section class="panel">
+    <div class="section-heading">
+      <h2>{{ title }}</h2>
+      <span>{{ copy_rows|length }} result{{ copy_rows|length|pluralize }}</span>
+    </div>
+    {% if copy_rows %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Book</th>
+              <th>Book copy</th>
+              <th>Status</th>
+              <th>Reader</th>
+              <th>Due date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in copy_rows %}
+              <tr class="{% if row.loan and row.loan.is_overdue %}row-overdue{% endif %}">
+                <td>
+                  <a class="record-link" href="{% url 'book_detail' row.copy.book.id %}">{{ row.copy.book.title }}</a>
+                  <span>{{ row.copy.book.author }}</span>
+                </td>
+                <td><a href="{% url 'copy_detail' row.copy.id %}">{{ row.copy.inventory_code }}</a></td>
+                <td>
+                  {% if row.loan %}
+                    {% if row.loan.is_overdue %}
+                      <span class="badge danger">Overdue</span>
+                    {% else %}
+                      <span class="badge warning">On loan</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="badge success">Available</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if row.loan %}
+                    <a href="{% url 'librarian_reader_loans' row.loan.reader.id %}">{{ row.loan.reader.get_full_name|default:row.loan.reader.username }}</a>
+                  {% else %}
+                    <span class="subtle">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if row.loan %}
+                    {{ row.loan.due_date }}
+                  {% else %}
+                    <span class="subtle">-</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">No book copies to show.</p>
+    {% endif %}
+  </section>
+{% endblock %}
