@@ -4,9 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: ./build.sh
-    preDeployCommand: python manage.py migrate
-    startCommand: gunicorn library_project.wsgi
-    initialDeployHook: python manage.py seed_demo --reset
+    startCommand: python manage.py migrate --noinput && python manage.py seed_demo && gunicorn library_project.wsgi
     envVars:
       - key: DEBUG
         value: "false"

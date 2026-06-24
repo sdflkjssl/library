@@ -64,8 +64,8 @@ The test suite covers role restrictions, loan creation, duplicate active loan pr
 
 The project is ready for Render using the committed `render.yaml` Blueprint.
 The Blueprint provisions a Python web service and a private PostgreSQL database,
-generates a `SECRET_KEY`, runs migrations before deploy, and seeds demo data
-once after the first successful deploy.
+generates a `SECRET_KEY`, and uses the free-tier compatible start command to
+run migrations, ensure demo data exists, and start Gunicorn.
 
 1. Push this repository to GitHub.
 2. In Render, choose **New > Blueprint** and connect the GitHub repository.
@@ -85,6 +85,6 @@ Manual service setup is also possible:
 ```bash
 ./build.sh
 python manage.py migrate
-python manage.py seed_demo --reset
+python manage.py seed_demo
 gunicorn library_project.wsgi
 ```
