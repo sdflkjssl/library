@@ -228,15 +228,26 @@ class LibraryWorkflowTests(TestCase):
         self.assertEqual(payload["items"][0]["meta"], "Copy CA-002")
         self.assertEqual(payload["items"][0]["availability"], "1/2")
 
-    def test_copy_search_filters_by_copy_number(self):
+    def test_copy_search_matches_copy_number_and_book_reference(self):
+        reference_match_book = Book.objects.create(
+            title="Reference Matching",
+            author="Case Tester",
+            reference_number="REF-001",
+            isbn="9780000000011",
+        )
+        reference_match_copy = BookCopy.objects.create(
+            book=reference_match_book,
+            inventory_code="RM-999",
+        )
         self.client.login(username="librarian", password="pass")
 
         response = self.client.get(reverse("api_copy_search"), {"q": "001"})
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(len(payload["items"]), 1)
-        self.assertEqual(payload["items"][0]["meta"], "Copy CA-001")
+        copy_numbers = {item["meta"] for item in payload["items"]}
+        self.assertIn("Copy CA-001", copy_numbers)
+        self.assertIn(f"Copy {reference_match_copy.inventory_code}", copy_numbers)
 
     def test_librarian_can_search_readers_for_modal(self):
         self.client.login(username="librarian", password="pass")

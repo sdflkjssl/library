@@ -726,15 +726,12 @@ def copy_search_api(request):
     query = request.GET.get("q", "").strip()
     copies = BookCopy.objects.available().select_related("book")
     if query:
-        copy_number_matches = copies.filter(inventory_code__icontains=query)
-        if copy_number_matches.exists():
-            copies = copy_number_matches
-        else:
-            copies = copies.filter(
-                Q(book__title__icontains=query)
-                | Q(book__author__icontains=query)
-                | Q(book__reference_number__icontains=query)
-                | Q(book__isbn__icontains=query)
+        copies = copies.filter(
+            Q(inventory_code__icontains=query)
+            | Q(book__title__icontains=query)
+            | Q(book__author__icontains=query)
+            | Q(book__reference_number__icontains=query)
+            | Q(book__isbn__icontains=query)
         )
     copies = list(copies.order_by("book__title", "inventory_code")[:20])
     book_ids = {copy.book_id for copy in copies}
