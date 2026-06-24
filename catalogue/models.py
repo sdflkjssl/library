@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Count, Exists, F, OuterRef, Q
+from django.db.models.deletion import SET_NULL
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -112,7 +113,9 @@ class LoanQuerySet(models.QuerySet):
 class Loan(models.Model):
     reader = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        on_delete=SET_NULL,
         related_name="loans",
     )
     copy = models.ForeignKey(BookCopy, on_delete=models.PROTECT, related_name="loans")
@@ -158,6 +161,33 @@ class Loan(models.Model):
     def is_overdue(self):
         return self.is_active and self.due_date < timezone.localdate()
 
+    @property
+    def days_until_due(self):
+        return (self.due_date - timezone.localdate()).days
+
+    @property
+    def due_timing_label(self):
+        days = self.days_until_due
+        if days < 0:
+            return f"{abs(days)}d Overdue"
+        if days == 0:
+            return "Due Today"
+        return f"{days}d Left"
+
+    @property
+    def due_timing_class(self):
+        if self.days_until_due < 0:
+            return "danger"
+        if self.days_until_due == 0:
+            return "warning"
+        return "neutral"
+
+    @property
+    def reader_display(self):
+        if not self.reader:
+            return "Deleted Reader"
+        return self.reader.get_full_name() or self.reader.get_username()
+
     def __str__(self):
         status = "active" if self.is_active else "returned"
-        return f"{self.copy} loaned to {self.reader.get_username()} ({status})"
+        return f"{self.copy} loaned to {self.reader_display} ({status})"

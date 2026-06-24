@@ -5,7 +5,7 @@
 {% block content %}
   <section class="page-heading">
     <div>
-      <p class="eyebrow">Librarian view</p>
+      <p class="eyebrow">Librarian View</p>
       <h1>{{ title }}</h1>
     </div>
   </section>
@@ -25,7 +25,11 @@
     {% endfor %}
     <div class="form-actions">
       <button class="button primary" type="submit">{{ submit_label }}</button>
-      <a class="button secondary" href="{% url 'readers_list' %}">Cancel</a>
+      {% if reader %}
+        <a class="button secondary" href="{% url 'librarian_reader_loans' reader.id %}">Cancel</a>
+      {% else %}
+        <a class="button secondary" href="{% url 'readers_list' %}">Cancel</a>
+      {% endif %}
     </div>
   </form>
 {% endblock %}

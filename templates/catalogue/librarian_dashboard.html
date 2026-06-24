@@ -5,15 +5,15 @@
 {% block content %}
   <section class="page-heading">
     <div>
-      <p class="eyebrow">Librarian view</p>
+      <p class="eyebrow">Librarian View</p>
       <h1>Loans</h1>
     </div>
-    <a class="button primary" href="{% url 'loan_create' %}">Register loan</a>
+    <a class="button primary" href="{% url 'loan_create' %}">Register Loan</a>
   </section>
 
   <section class="stats-grid">
     <a class="stat stat-link {% if status == 'active' %}active{% endif %}" href="{% url 'librarian_dashboard' %}?status=active">
-      <span>Active loans</span>
+      <span>Active Loans</span>
       <strong>{{ stats.active_loans }}</strong>
     </a>
     <a class="stat stat-link {% if status == 'overdue' %}active{% endif %}" href="{% url 'librarian_dashboard' %}?status=overdue">
@@ -21,7 +21,7 @@
       <strong>{{ stats.overdue_loans }}</strong>
     </a>
     <a class="stat stat-link" href="{% url 'book_copies_list' %}?status=available">
-      <span>Available book copies</span>
+      <span>Available Book Copies</span>
       <strong>{{ stats.available_copies }}</strong>
     </a>
     <a class="stat stat-link" href="{% url 'readers_list' %}">
@@ -41,8 +41,8 @@
             <tr>
               <th>Reader</th>
               <th>Book</th>
-              <th>Book copy</th>
-              <th>Due date</th>
+              <th>Book Copy</th>
+              <th>Due Date</th>
               <th>Status</th>
               <th></th>
             </tr>
@@ -51,16 +51,18 @@
             {% for loan in loans %}
               <tr class="{% if loan.is_overdue %}row-overdue{% endif %}">
                 <td>
-                  <a class="record-link" href="{% url 'librarian_reader_loans' loan.reader.id %}">{{ loan.reader.get_full_name|default:loan.reader.username }}</a>
+                  {% if loan.reader %}
+                    <a class="record-link" href="{% url 'librarian_reader_loans' loan.reader.id %}">{{ loan.reader_display }}</a>
+                  {% else %}
+                    <span class="subtle">{{ loan.reader_display }}</span>
+                  {% endif %}
                 </td>
                 <td>
                   <a class="record-link" href="{% url 'book_detail' loan.copy.book.id %}">{{ loan.copy.book.title }}</a>
                 </td>
                 <td><a href="{% url 'copy_detail' loan.copy.id %}">{{ loan.copy.inventory_code }}</a></td>
                 <td>
-                  <span class="badge {% if loan.is_overdue %}danger{% else %}neutral{% endif %}">
-                    {{ loan.due_date }}
-                  </span>
+                  {% include "catalogue/includes/due_date.html" with loan=loan %}
                 </td>
                 <td>
                   {% if loan.is_overdue %}
@@ -71,8 +73,8 @@
                 </td>
                 <td class="actions">
                   <div class="action-group">
-                    <a class="button compact secondary" href="{% url 'loan_due_date' loan.id %}">Edit date</a>
-                    <form method="post" action="{% url 'loan_return' loan.id %}" data-confirm-return data-confirm-title="Return book" data-confirm-message="Return {{ loan.copy.book.title }} from {{ loan.reader.get_full_name|default:loan.reader.username }}? This will close the active loan.">
+                    <a class="button compact secondary" href="{% url 'loan_due_date' loan.id %}">Edit Date</a>
+                    <form method="post" action="{% url 'loan_return' loan.id %}" data-confirm-return data-confirm-title="Return Book" data-confirm-message="Return {{ loan.copy.book.title }} from {{ loan.reader_display }}? This will close the active loan.">
                       {% csrf_token %}
                       <button class="button compact" type="submit">Return</button>
                     </form>

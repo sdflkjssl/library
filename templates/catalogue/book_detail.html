@@ -12,12 +12,12 @@
     <div class="heading-actions">
       <span class="badge {{ availability_class }}">{{ availability_label }}</span>
       {% if can_edit %}
-        <a class="button" href="{% url 'book_copy_create' book.id %}">Add book copy</a>
+        <a class="button" href="{% url 'book_copy_create' book.id %}">Add Book Copy</a>
         {% if can_modify_book %}
-          <a class="button secondary" href="{% url 'book_update' book.id %}">Edit book</a>
+          <a class="button secondary" href="{% url 'book_update' book.id %}">Edit Book</a>
         {% endif %}
         {% if can_delete_book %}
-          <a class="button danger" href="{% url 'book_delete' book.id %}">Delete book</a>
+          <a class="button danger" href="{% url 'book_delete' book.id %}">Delete Book</a>
         {% endif %}
       {% endif %}
     </div>
@@ -33,7 +33,7 @@
     <div class="section-heading">
       <h2>Copies</h2>
       {% if can_edit %}
-        <a class="button compact secondary" href="{% url 'book_copy_create' book.id %}">Add copy</a>
+        <a class="button compact secondary" href="{% url 'book_copy_create' book.id %}">Add Copy</a>
       {% endif %}
     </div>
     {% if copy_rows %}
@@ -43,8 +43,8 @@
             <tr>
               <th>Copy</th>
               <th>Status</th>
-              {% if can_view_readers %}<th>Current reader</th>{% endif %}
-              <th>Due date</th>
+              {% if can_view_readers %}<th>Current Reader</th>{% endif %}
+              <th>Due Date</th>
               {% if can_edit %}<th></th>{% endif %}
             </tr>
           </thead>
@@ -54,7 +54,7 @@
                 <td><a class="record-link" href="{% url 'copy_detail' row.copy.id %}">{{ row.copy.inventory_code }}</a></td>
                 <td>
                   {% if row.loan %}
-                    <span class="badge danger">On loan</span>
+                    <span class="badge danger">On Loan</span>
                   {% else %}
                     <span class="badge success">Available</span>
                   {% endif %}
@@ -70,7 +70,7 @@
                 {% endif %}
                 <td>
                   {% if row.loan %}
-                    {{ row.loan.due_date }}
+                    {% include "catalogue/includes/due_date.html" with loan=row.loan %}
                   {% else %}
                     <span class="subtle">-</span>
                   {% endif %}

@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Create account - Library{% endblock %}
+{% block title %}Create Account - Library{% endblock %}
 
 {% block content %}
   <section class="auth-layout">
     <div>
-      <p class="eyebrow">Reader account</p>
-      <h1>{% if librarian_creating_reader %}Create reader{% else %}Create an account{% endif %}</h1>
+      <p class="eyebrow">Reader Account</p>
+      <h1>{% if librarian_creating_reader %}Create Reader{% else %}Create Account{% endif %}</h1>
       <p class="lead">Reader accounts can search the catalogue and view their current loans.</p>
     </div>
     <form class="panel form-stack" method="post">
@@ -22,11 +22,11 @@
           {% if field.errors %}<span class="field-error">{{ field.errors|striptags }}</span>{% endif %}
         </label>
       {% endfor %}
-      <button class="button primary" type="submit">{% if librarian_creating_reader %}Create reader{% else %}Create account{% endif %}</button>
+      <button class="button primary" type="submit">{% if librarian_creating_reader %}Create Reader{% else %}Create Account{% endif %}</button>
       {% if librarian_creating_reader %}
         <a href="{% url 'librarian_dashboard' %}">Cancel</a>
       {% else %}
-        <a href="{% url 'login' %}">Already have an account?</a>
+        <a href="{% url 'login' %}">Already Have An Account?</a>
       {% endif %}
     </form>
   </section>

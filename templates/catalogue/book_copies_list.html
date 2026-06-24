@@ -5,15 +5,15 @@
 {% block content %}
   <section class="page-heading">
     <div>
-      <p class="eyebrow">Librarian view</p>
+      <p class="eyebrow">Librarian View</p>
       <h1>{{ title }}</h1>
     </div>
-    <a class="button primary" href="{% url 'loan_create' %}">Register loan</a>
+    <a class="button primary" href="{% url 'loan_create' %}">Register Loan</a>
   </section>
 
-  <nav class="segmented" aria-label="Book copy filter">
-    <a class="{% if status == 'all' %}active{% endif %}" href="{% url 'book_copies_list' %}?status=all">All book copies</a>
-    <a class="{% if status == 'available' %}active{% endif %}" href="{% url 'book_copies_list' %}?status=available">Available book copies</a>
+  <nav class="segmented" aria-label="Book Copy Filter">
+    <a class="{% if status == 'all' %}active{% endif %}" href="{% url 'book_copies_list' %}?status=all">All Book Copies</a>
+    <a class="{% if status == 'available' %}active{% endif %}" href="{% url 'book_copies_list' %}?status=available">Available Book Copies</a>
   </nav>
 
   <section class="panel">
@@ -27,10 +27,10 @@
           <thead>
             <tr>
               <th>Book</th>
-              <th>Book copy</th>
+              <th>Book Copy</th>
               <th>Status</th>
               <th>Reader</th>
-              <th>Due date</th>
+              <th>Due Date</th>
               <th></th>
             </tr>
           </thead>
@@ -47,7 +47,7 @@
                     {% if row.loan.is_overdue %}
                       <span class="badge danger">Overdue</span>
                     {% else %}
-                      <span class="badge warning">On loan</span>
+                      <span class="badge warning">On Loan</span>
                     {% endif %}
                   {% else %}
                     <span class="badge success">Available</span>
@@ -62,7 +62,7 @@
                 </td>
                 <td>
                   {% if row.loan %}
-                    {{ row.loan.due_date }}
+                    {% include "catalogue/includes/due_date.html" with loan=row.loan %}
                   {% else %}
                     <span class="subtle">-</span>
                   {% endif %}

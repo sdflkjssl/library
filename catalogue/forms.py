@@ -7,6 +7,7 @@ from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.utils import timezone
 
 from .models import Book, BookCopy, UserProfile
+from .password_validation import MixedCharacterPasswordValidator
 
 
 User = get_user_model()
@@ -15,6 +16,7 @@ USERNAME_MAX_LENGTH = 40
 USERNAME_HELP_TEXT = (
     "Required. 40 characters or fewer. Letters, digits and @/./+/-/_ only."
 )
+PASSWORD_HELP_TEXT = MixedCharacterPasswordValidator.message
 
 
 def account_username_field():
@@ -28,6 +30,25 @@ def account_username_field():
             "max_length": "Username must be 40 characters or fewer.",
         },
     )
+
+
+class AccountFormMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "password1" in self.fields:
+            self.fields["password1"].help_text = PASSWORD_HELP_TEXT
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email", "").strip()
+        if not email:
+            return ""
+        users = User.objects.filter(email__iexact=email)
+        instance = getattr(self, "instance", None)
+        if instance and instance.pk:
+            users = users.exclude(pk=instance.pk)
+        if users.exists():
+            raise forms.ValidationError("This email is already used by another user.")
+        return email
 
 
 class DateInput(forms.DateInput):
@@ -51,6 +72,9 @@ class BookForm(forms.ModelForm):
     class Meta:
         model = Book
         fields = ("title", "author", "reference_number", "isbn", "description")
+        labels = {
+            "reference_number": "Reference Number",
+        }
         widgets = {
             "description": forms.Textarea(attrs={"rows": 4}),
         }
@@ -58,7 +82,7 @@ class BookForm(forms.ModelForm):
 
 class BookCreateForm(BookForm):
     initial_copy_codes = forms.CharField(
-        label="Initial book copies",
+        label="Initial Book Copies",
         required=False,
         help_text="Add one copy code per line, or separate codes with commas.",
         widget=forms.Textarea(
@@ -99,6 +123,9 @@ class BookCopyForm(forms.ModelForm):
     class Meta:
         model = BookCopy
         fields = ("inventory_code",)
+        labels = {
+            "inventory_code": "Book Copy Number",
+        }
 
 
 class LoanCreateForm(forms.Form):
@@ -109,10 +136,10 @@ class LoanCreateForm(forms.Form):
     )
     copy = forms.ModelChoiceField(
         queryset=BookCopy.objects.none(),
-        label="Available copy",
+        label="Available Copy",
         widget=forms.HiddenInput,
     )
-    due_date = forms.DateField(label="Return due date", widget=DateInput)
+    due_date = forms.DateField(label="Return Due Date", widget=DateInput)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -149,27 +176,15 @@ class LoanCreateForm(forms.Form):
             return ""
         return f"{copy.book.title} - {copy.inventory_code}"
 
-    def clean_due_date(self):
-        due_date = self.cleaned_data["due_date"]
-        if due_date < timezone.localdate():
-            raise forms.ValidationError("Choose today or a future date.")
-        return due_date
-
 
 class DueDateForm(forms.Form):
-    due_date = forms.DateField(label="New due date", widget=DateInput)
-
-    def clean_due_date(self):
-        due_date = self.cleaned_data["due_date"]
-        if due_date < timezone.localdate():
-            raise forms.ValidationError("Choose today or a future date.")
-        return due_date
+    due_date = forms.DateField(label="New Due Date", widget=DateInput)
 
 
-class ReaderSignupForm(UserCreationForm):
+class ReaderSignupForm(AccountFormMixin, UserCreationForm):
     username = account_username_field()
-    first_name = forms.CharField(max_length=150, label="First name")
-    last_name = forms.CharField(max_length=150, label="Last name")
+    first_name = forms.CharField(max_length=150, label="First Name")
+    last_name = forms.CharField(max_length=150, label="Last Name")
     email = forms.EmailField(label="Email", required=False)
 
     class Meta(UserCreationForm.Meta):
@@ -189,10 +204,10 @@ class ReaderSignupForm(UserCreationForm):
         return user
 
 
-class LibrarianCreateForm(UserCreationForm):
+class LibrarianCreateForm(AccountFormMixin, UserCreationForm):
     username = account_username_field()
-    first_name = forms.CharField(max_length=150, label="First name")
-    last_name = forms.CharField(max_length=150, label="Last name")
+    first_name = forms.CharField(max_length=150, label="First Name")
+    last_name = forms.CharField(max_length=150, label="Last Name")
     email = forms.EmailField(label="Email", required=False)
 
     class Meta(UserCreationForm.Meta):
@@ -213,7 +228,7 @@ class LibrarianCreateForm(UserCreationForm):
         return user
 
 
-class LibrarianUpdateForm(forms.ModelForm):
+class LibrarianUpdateForm(AccountFormMixin, forms.ModelForm):
     username = account_username_field()
 
     class Meta:
@@ -221,7 +236,7 @@ class LibrarianUpdateForm(forms.ModelForm):
         fields = ("username", "first_name", "last_name", "email")
 
 
-class ReaderUpdateForm(forms.ModelForm):
+class ReaderUpdateForm(AccountFormMixin, forms.ModelForm):
     username = account_username_field()
 
     class Meta:

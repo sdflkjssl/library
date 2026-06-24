@@ -28,14 +28,14 @@
         <nav class="nav-links" aria-label="Main navigation">
           <a class="{% if current == 'catalogue' or current == 'book_detail' or current == 'book_create' or current == 'book_update' or current == 'book_delete' %}active{% endif %}" href="{% url 'catalogue' %}">Catalogue</a>
           {% if user.profile.role == "reader" %}
-            <a class="{% if current == 'reader_loans' %}active{% endif %}" href="{% url 'reader_loans' %}">My loans</a>
+            <a class="{% if current == 'reader_loans' %}active{% endif %}" href="{% url 'reader_loans' %}">My Loans</a>
           {% elif user.profile.role == "librarian" or user.is_superuser %}
             <a class="{% if current == 'librarian_dashboard' or current == 'librarian_reader_loans' or current == 'loan_due_date' %}active{% endif %}" href="{% url 'librarian_dashboard' %}">Loans</a>
-            <a class="{% if current == 'book_copies_list' or current == 'copy_detail' or current == 'book_copy_create' or current == 'book_copy_update' or current == 'book_copy_delete' %}active{% endif %}" href="{% url 'book_copies_list' %}">All book copies</a>
+            <a class="{% if current == 'book_copies_list' or current == 'copy_detail' or current == 'book_copy_create' or current == 'book_copy_update' or current == 'book_copy_delete' %}active{% endif %}" href="{% url 'book_copies_list' %}">All Book Copies</a>
             <a class="{% if current == 'readers_list' or current == 'reader_update' or current == 'reader_delete' %}active{% endif %}" href="{% url 'readers_list' %}">Readers</a>
             <a class="{% if current == 'librarians_list' or current == 'librarian_create' or current == 'librarian_update' or current == 'librarian_delete' %}active{% endif %}" href="{% url 'librarians_list' %}">Librarians</a>
-            <a class="{% if current == 'loan_create' %}active{% endif %}" href="{% url 'loan_create' %}">New loan</a>
-            <a class="{% if current == 'signup' %}active{% endif %}" href="{% url 'signup' %}">New reader</a>
+            <a class="{% if current == 'loan_create' %}active{% endif %}" href="{% url 'loan_create' %}">New Loan</a>
+            <a class="{% if current == 'signup' %}active{% endif %}" href="{% url 'signup' %}">New Reader</a>
           {% endif %}
         </nav>
         {% endwith %}

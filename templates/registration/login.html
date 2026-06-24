@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Sign in - Library{% endblock %}
+{% block title %}Sign In - Library{% endblock %}
 
 {% block content %}
   <section class="auth-layout">
     <div>
-      <p class="eyebrow">Library prototype</p>
-      <h1>Sign in</h1>
+      <p class="eyebrow">Library Prototype</p>
+      <h1>Sign In</h1>
       <p class="lead">Use a reader or librarian demo account to manage loans and catalogue availability.</p>
     </div>
     <form class="panel form-stack" method="post">
@@ -22,8 +22,8 @@
         Password
         {{ form.password }}
       </label>
-      <button class="button primary" type="submit">Sign in</button>
-      <a href="{% url 'signup' %}">Create a reader account</a>
+      <button class="button primary" type="submit">Sign In</button>
+      <a href="{% url 'signup' %}">Create a Reader Account</a>
     </form>
   </section>
 {% endblock %}

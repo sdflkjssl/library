@@ -53,6 +53,7 @@
   const searchTitle = document.getElementById("search-modal-title");
   let activePicker = null;
   let searchTimer = null;
+  let searchRequestId = 0;
 
   function setHidden(element, hidden) {
     if (element) {
@@ -86,6 +87,7 @@
   function closeSearch() {
     setHidden(searchModal, true);
     activePicker = null;
+    searchRequestId += 1;
     if (searchInput) {
       searchInput.value = "";
     }
@@ -142,12 +144,17 @@
     if (!activePicker) {
       return;
     }
+    const requestId = searchRequestId + 1;
+    searchRequestId = requestId;
+    const picker = activePicker;
     const endpoint = activePicker.dataset.endpoint;
     const query = searchInput.value.trim();
-    const url = new URL(endpoint, window.location.origin);
-    if (query) {
-      url.searchParams.set("q", query);
+    if (!query) {
+      renderSearchState("Type to search.");
+      return;
     }
+    const url = new URL(endpoint, window.location.origin);
+    url.searchParams.set("q", query);
 
     renderSearchState("Searching...");
     try {
@@ -159,8 +166,18 @@
         throw new Error("Search failed");
       }
       const payload = await response.json();
+      if (
+        requestId !== searchRequestId
+        || picker !== activePicker
+        || query !== searchInput.value.trim()
+      ) {
+        return;
+      }
       renderResults(payload.items || []);
     } catch (error) {
+      if (requestId !== searchRequestId || picker !== activePicker) {
+        return;
+      }
       renderSearchState("Search is unavailable. Please try again.");
     }
   }
@@ -172,7 +189,8 @@
     setHidden(searchModal, false);
     searchInput.value = "";
     searchInput.focus();
-    runSearch();
+    searchRequestId += 1;
+    renderSearchState("Type to search.");
   }
 
   document.addEventListener("click", (event) => {
@@ -191,10 +209,12 @@
   });
 
   if (searchInput) {
-    searchInput.addEventListener("input", () => {
+    const queueSearch = () => {
       window.clearTimeout(searchTimer);
       searchTimer = window.setTimeout(runSearch, 180);
-    });
+    };
+    searchInput.addEventListener("input", queueSearch);
+    searchInput.addEventListener("search", queueSearch);
   }
 
   document.addEventListener("keydown", (event) => {

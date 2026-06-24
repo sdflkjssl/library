@@ -447,6 +447,30 @@ table {
   border-collapse: collapse;
 }
 
+.catalogue-table {
+  table-layout: fixed;
+}
+
+.catalogue-table .col-title {
+  width: 32%;
+}
+
+.catalogue-table .col-author {
+  width: 17%;
+}
+
+.catalogue-table .col-reference {
+  width: 20%;
+}
+
+.catalogue-table .col-isbn {
+  width: 21%;
+}
+
+.catalogue-table .col-availability {
+  width: 10%;
+}
+
 th,
 td {
   padding: 0.9rem 0.75rem;
@@ -527,6 +551,35 @@ tr:last-child td {
   color: var(--text);
 }
 
+.due-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.due-chip {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 0.16rem 0.45rem;
+}
+
+.due-chip.danger {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.due-chip.warning {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
 .empty-state {
   color: var(--muted);
   margin: 0;
@@ -594,6 +647,16 @@ tr:last-child td {
   color: var(--muted);
   font-size: 0.9rem;
   font-weight: 500;
+}
+
+.help-text ul {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.help-text li {
+  margin: 0;
 }
 
 .messages {

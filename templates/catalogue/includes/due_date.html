@@ -1,0 +1,4 @@
+<span class="due-date">
+  <span class="badge {% if loan.is_overdue %}danger{% else %}neutral{% endif %}">{{ loan.due_date }}</span>
+  <span class="due-chip {{ loan.due_timing_class }}">{{ loan.due_timing_label }}</span>
+</span>

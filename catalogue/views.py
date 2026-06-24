@@ -122,7 +122,7 @@ def book_create(request):
     return render(
         request,
         "catalogue/book_form.html",
-        {"form": form, "title": "Add book", "submit_label": "Add book"},
+        {"form": form, "title": "Add Book", "submit_label": "Add Book"},
     )
 
 
@@ -146,8 +146,8 @@ def book_update(request, book_id):
         {
             "form": form,
             "book": book,
-            "title": "Edit book",
-            "submit_label": "Save book",
+            "title": "Edit Book",
+            "submit_label": "Save Book",
         },
     )
 
@@ -177,7 +177,7 @@ def book_delete(request, book_id):
         request,
         "catalogue/confirm_delete.html",
         {
-            "title": "Delete book",
+            "title": "Delete Book",
             "object_name": book.title,
             "cancel_href": reverse("book_detail", args=[book.id]),
         },
@@ -276,8 +276,8 @@ def book_copy_create(request, book_id):
         {
             "form": form,
             "book": book,
-            "title": "Add book copy",
-            "submit_label": "Add copy",
+            "title": "Add Book Copy",
+            "submit_label": "Add Copy",
         },
     )
 
@@ -300,8 +300,8 @@ def book_copy_update(request, copy_id):
             "form": form,
             "copy": copy,
             "book": copy.book,
-            "title": "Edit book copy",
-            "submit_label": "Save copy",
+            "title": "Edit Book Copy",
+            "submit_label": "Save Copy",
         },
     )
 
@@ -329,7 +329,7 @@ def book_copy_delete(request, copy_id):
         request,
         "catalogue/confirm_delete.html",
         {
-            "title": "Delete book copy",
+            "title": "Delete Book Copy",
             "object_name": copy.inventory_code,
             "cancel_href": reverse("copy_detail", args=[copy.id]),
         },
@@ -367,10 +367,10 @@ def librarian_dashboard(request):
     loans = Loan.objects.active().select_related("reader", "copy", "copy__book")
     if status == "overdue":
         loans = loans.filter(due_date__lt=timezone.localdate())
-        list_title = "Overdue loans"
+        list_title = "Overdue Loans"
     else:
         status = "active"
-        list_title = "Active loans"
+        list_title = "Active Loans"
 
     stats = {
         "active_loans": Loan.objects.active().count(),
@@ -433,15 +433,15 @@ def reader_update(request, user_id):
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Reader account updated.")
-        return redirect("readers_list")
+        return redirect("librarian_reader_loans", reader_id=reader.id)
     return render(
         request,
         "catalogue/reader_form.html",
         {
             "form": form,
             "reader": reader,
-            "title": "Edit reader",
-            "submit_label": "Save reader",
+            "title": "Edit Reader",
+            "submit_label": "Save Reader",
         },
     )
 
@@ -468,7 +468,7 @@ def reader_delete(request, user_id):
         request,
         "catalogue/confirm_delete.html",
         {
-            "title": "Delete reader",
+            "title": "Delete Reader",
             "object_name": _user_display(reader),
             "cancel_href": reverse("readers_list"),
         },
@@ -506,8 +506,8 @@ def librarian_create(request):
         "catalogue/librarian_form.html",
         {
             "form": form,
-            "title": "Add librarian",
-            "submit_label": "Add librarian",
+            "title": "Add Librarian",
+            "submit_label": "Add Librarian",
         },
     )
 
@@ -526,8 +526,8 @@ def librarian_update(request, user_id):
         {
             "form": form,
             "librarian": librarian,
-            "title": "Edit librarian",
-            "submit_label": "Save librarian",
+            "title": "Edit Librarian",
+            "submit_label": "Save Librarian",
         },
     )
 
@@ -547,7 +547,7 @@ def librarian_delete(request, user_id):
         request,
         "catalogue/confirm_delete.html",
         {
-            "title": "Delete librarian",
+            "title": "Delete Librarian",
             "object_name": _user_display(librarian),
             "cancel_href": reverse("librarians_list"),
         },
@@ -559,11 +559,11 @@ def book_copies_list(request):
     status = request.GET.get("status", "all")
     if status == "available":
         copies = BookCopy.objects.available().select_related("book")
-        title = "Available book copies"
+        title = "Available Book Copies"
     else:
         status = "all"
         copies = BookCopy.objects.with_active_loan_flag().select_related("book")
-        title = "All book copies"
+        title = "All Book Copies"
 
     active_loans = {
         loan.copy_id: loan
@@ -608,9 +608,9 @@ def loan_create(request):
         else:
             messages.success(
                 request,
-                f"Loan registered for {loan.reader.get_username()}.",
+                f"Loan registered for {loan.reader_display}.",
             )
-            return redirect("librarian_reader_loans", reader_id=loan.reader_id)
+            return redirect("librarian_dashboard")
 
     return render(request, "catalogue/loan_form.html", {"form": form})
 
@@ -641,8 +641,7 @@ def librarian_reader_loans(request, reader_id):
             "reader": reader,
             "active_loans": active_loans,
             "returned_loans": returned_loans,
-            "can_delete_reader": not reader_has_active_loans
-            and not Loan.objects.filter(reader=reader).exists(),
+            "can_delete_reader": not reader_has_active_loans,
             "today": timezone.localdate(),
         },
     )
@@ -655,14 +654,13 @@ def loan_return(request, loan_id):
         Loan.objects.active().select_related("reader", "copy", "copy__book"),
         pk=loan_id,
     )
-    reader_id = loan.reader_id
     try:
         return_loan(loan=loan, returned_by=request.user)
     except ValidationError as exc:
         messages.error(request, exc.message)
     else:
         messages.success(request, f"Returned {loan.copy.book.title}.")
-    return redirect("librarian_reader_loans", reader_id=reader_id)
+    return redirect("librarian_dashboard")
 
 
 @librarian_required
@@ -679,7 +677,7 @@ def loan_due_date(request, loan_id):
             form.add_error(None, exc.message)
         else:
             messages.success(request, "Due date updated.")
-            return redirect("librarian_reader_loans", reader_id=loan.reader_id)
+            return redirect("librarian_dashboard")
     return render(request, "catalogue/loan_due_date.html", {"form": form, "loan": loan})
 
 
@@ -718,12 +716,15 @@ def copy_search_api(request):
     query = request.GET.get("q", "").strip()
     copies = BookCopy.objects.available().select_related("book")
     if query:
-        copies = copies.filter(
-            Q(inventory_code__icontains=query)
-            | Q(book__title__icontains=query)
-            | Q(book__author__icontains=query)
-            | Q(book__reference_number__icontains=query)
-            | Q(book__isbn__icontains=query)
+        copy_number_matches = copies.filter(inventory_code__icontains=query)
+        if copy_number_matches.exists():
+            copies = copy_number_matches
+        else:
+            copies = copies.filter(
+                Q(book__title__icontains=query)
+                | Q(book__author__icontains=query)
+                | Q(book__reference_number__icontains=query)
+                | Q(book__isbn__icontains=query)
         )
     copies = list(copies.order_by("book__title", "inventory_code")[:20])
     book_ids = {copy.book_id for copy in copies}

@@ -5,10 +5,10 @@
 {% block content %}
   <section class="page-heading">
     <div>
-      <p class="eyebrow">Librarian view</p>
+      <p class="eyebrow">Librarian View</p>
       <h1>Readers</h1>
     </div>
-    <a class="button primary" href="{% url 'signup' %}">New reader</a>
+    <a class="button primary" href="{% url 'signup' %}">New Reader</a>
   </section>
 
   <form class="search-bar" method="get">
@@ -32,7 +32,7 @@
               <th>Reader</th>
               <th>Username</th>
               <th>Email</th>
-              <th>Active loans</th>
+              <th>Active Loans</th>
               <th>Overdue</th>
               <th></th>
             </tr>
@@ -54,7 +54,7 @@
                 <td class="actions">
                   <div class="action-group">
                     <a class="button compact secondary" href="{% url 'reader_update' reader.id %}">Edit</a>
-                    {% if not reader.loan_count %}
+                    {% if not reader.active_loan_count %}
                       <a class="button compact danger" href="{% url 'reader_delete' reader.id %}">Delete</a>
                     {% endif %}
                   </div>

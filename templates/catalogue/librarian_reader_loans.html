@@ -5,21 +5,21 @@
 {% block content %}
   <section class="page-heading">
     <div>
-      <p class="eyebrow">Librarian view</p>
+      <p class="eyebrow">Librarian View</p>
       <h1>{{ reader.get_full_name|default:reader.username }}</h1>
       <p class="muted">{{ reader.get_username }}{% if reader.email %} - {{ reader.email }}{% endif %}</p>
     </div>
     <div class="heading-actions">
-      <a class="button secondary" href="{% url 'reader_update' reader.id %}">Edit reader</a>
+      <a class="button secondary" href="{% url 'reader_update' reader.id %}">Edit Reader</a>
       {% if can_delete_reader %}
-        <a class="button danger" href="{% url 'reader_delete' reader.id %}">Delete reader</a>
+        <a class="button danger" href="{% url 'reader_delete' reader.id %}">Delete Reader</a>
       {% endif %}
     </div>
   </section>
 
   <section class="panel">
     <div class="section-heading">
-      <h2>Active loans</h2>
+      <h2>Active Loans</h2>
     </div>
     {% if active_loans %}
       <div class="table-wrap">
@@ -28,7 +28,7 @@
             <tr>
               <th>Book</th>
               <th>Copy</th>
-              <th>Due date</th>
+              <th>Due Date</th>
               <th>Status</th>
               <th></th>
             </tr>
@@ -41,18 +41,18 @@
                   <span>{{ loan.copy.book.author }}</span>
                 </td>
                 <td><a href="{% url 'copy_detail' loan.copy.id %}">{{ loan.copy.inventory_code }}</a></td>
-                <td>{{ loan.due_date }}</td>
+                <td>{% include "catalogue/includes/due_date.html" with loan=loan %}</td>
                 <td>
                   {% if loan.is_overdue %}
                     <span class="badge danger">Overdue</span>
                   {% else %}
-                    <span class="badge success">On time</span>
+                    <span class="badge success">On Time</span>
                   {% endif %}
                 </td>
                 <td class="actions">
                   <div class="action-group">
-                    <a class="button compact secondary" href="{% url 'loan_due_date' loan.id %}">Edit date</a>
-                    <form method="post" action="{% url 'loan_return' loan.id %}" data-confirm-return data-confirm-title="Return book" data-confirm-message="Return {{ loan.copy.book.title }} from {{ reader.get_full_name|default:reader.username }}? This will close the active loan.">
+                    <a class="button compact secondary" href="{% url 'loan_due_date' loan.id %}">Edit Date</a>
+                    <form method="post" action="{% url 'loan_return' loan.id %}" data-confirm-return data-confirm-title="Return Book" data-confirm-message="Return {{ loan.copy.book.title }} from {{ reader.get_full_name|default:reader.username }}? This will close the active loan.">
                       {% csrf_token %}
                       <button class="button compact" type="submit">Return</button>
                     </form>
@@ -70,7 +70,7 @@
 
   <section class="panel">
     <div class="section-heading">
-      <h2>Recent returns</h2>
+      <h2>Recent Returns</h2>
     </div>
     {% if returned_loans %}
       <div class="table-wrap">

@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}My loans - Library{% endblock %}
+{% block title %}My Loans - Library{% endblock %}
 
 {% block content %}
   <section class="page-heading">
     <div>
-      <p class="eyebrow">Reader view</p>
-      <h1>My loans</h1>
+      <p class="eyebrow">Reader View</p>
+      <h1>My Loans</h1>
     </div>
   </section>
 
   <section class="panel">
     <div class="section-heading">
-      <h2>Active loans</h2>
+      <h2>Active Loans</h2>
     </div>
     {% if active_loans %}
       <div class="table-wrap">
@@ -21,7 +21,7 @@
             <tr>
               <th>Book</th>
               <th>Copy</th>
-              <th>Due date</th>
+              <th>Due Date</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -33,12 +33,12 @@
                   <span>{{ loan.copy.book.author }}</span>
                 </td>
                 <td><a href="{% url 'copy_detail' loan.copy.id %}">{{ loan.copy.inventory_code }}</a></td>
-                <td>{{ loan.due_date }}</td>
+                <td>{% include "catalogue/includes/due_date.html" with loan=loan %}</td>
                 <td>
                   {% if loan.is_overdue %}
                     <span class="badge danger">Overdue</span>
                   {% else %}
-                    <span class="badge success">On time</span>
+                    <span class="badge success">On Time</span>
                   {% endif %}
                 </td>
               </tr>
@@ -53,7 +53,7 @@
 
   <section class="panel">
     <div class="section-heading">
-      <h2>Recent returns</h2>
+      <h2>Recent Returns</h2>
     </div>
     {% if returned_loans %}
       <div class="table-wrap">

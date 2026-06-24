@@ -6,10 +6,10 @@
   <section class="page-heading">
     <div>
       <p class="eyebrow">Catalogue</p>
-      <h1>Find a book</h1>
+      <h1>Find a Book</h1>
     </div>
     {% if user.profile.role == "librarian" or user.is_superuser %}
-      <a class="button primary" href="{% url 'book_create' %}">Add book</a>
+      <a class="button primary" href="{% url 'book_create' %}">Add Book</a>
     {% endif %}
   </section>
 
@@ -28,7 +28,14 @@
     </div>
     {% if books %}
       <div class="table-wrap">
-        <table>
+        <table class="catalogue-table">
+          <colgroup>
+            <col class="col-title">
+            <col class="col-author">
+            <col class="col-reference">
+            <col class="col-isbn">
+            <col class="col-availability">
+          </colgroup>
           <thead>
             <tr>
               <th>Title</th>

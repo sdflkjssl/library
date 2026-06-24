@@ -5,7 +5,7 @@
 {% block content %}
   <section class="page-heading">
     <div>
-      <p class="eyebrow">Book copy</p>
+      <p class="eyebrow">Book Copy</p>
       <h1>{{ copy.inventory_code }}</h1>
       <p class="muted"><a href="{% url 'book_detail' book.id %}">{{ book.title }}</a> - {{ book.author }} - Ref {{ book.reference_number }}</p>
     </div>
@@ -13,10 +13,10 @@
       <span class="badge {{ availability_class }}">{{ availability_label }}</span>
       {% if can_edit %}
         {% if can_modify_copy %}
-          <a class="button secondary" href="{% url 'book_copy_update' copy.id %}">Edit copy</a>
+          <a class="button secondary" href="{% url 'book_copy_update' copy.id %}">Edit Copy</a>
         {% endif %}
         {% if can_delete_copy %}
-          <a class="button danger" href="{% url 'book_copy_delete' copy.id %}">Delete copy</a>
+          <a class="button danger" href="{% url 'book_copy_delete' copy.id %}">Delete Copy</a>
         {% endif %}
       {% endif %}
     </div>
@@ -25,15 +25,15 @@
   <section class="panel">
     <div class="detail-grid">
       <div>
-        <span class="detail-label">Copy status</span>
+        <span class="detail-label">Copy Status</span>
         {% if active_loan %}
-          <strong>On loan</strong>
+          <strong>On Loan</strong>
         {% else %}
           <strong>Available</strong>
         {% endif %}
       </div>
       <div>
-        <span class="detail-label">Book reference</span>
+        <span class="detail-label">Book Reference</span>
         <strong>{{ book.reference_number }}</strong>
       </div>
       <div>
@@ -50,8 +50,8 @@
           {% endif %}
         </div>
         <div>
-          <span class="detail-label">Due date</span>
-          <strong>{{ active_loan.due_date }}</strong>
+          <span class="detail-label">Due Date</span>
+          {% include "catalogue/includes/due_date.html" with loan=active_loan %}
         </div>
       {% endif %}
     </div>

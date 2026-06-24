@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Edit due date - Library{% endblock %}
+{% block title %}Edit Due Date - Library{% endblock %}
 
 {% block content %}
   <section class="page-heading">
     <div>
-      <p class="eyebrow">Librarian view</p>
-      <h1>Edit due date</h1>
+      <p class="eyebrow">Librarian View</p>
+      <h1>Edit Due Date</h1>
     </div>
   </section>
 
@@ -27,8 +27,8 @@
       </label>
     {% endfor %}
     <div class="form-actions">
-      <button class="button primary" type="submit">Save due date</button>
-      <a class="button secondary" href="{% url 'librarian_reader_loans' loan.reader_id %}">Cancel</a>
+      <button class="button primary" type="submit">Save Due Date</button>
+      <a class="button secondary" href="{% url 'librarian_dashboard' %}">Cancel</a>
     </div>
   </form>
 {% endblock %}

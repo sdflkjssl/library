@@ -15,15 +15,9 @@ def _ensure_active_loan(loan):
         raise ValidationError("This loan has already been returned.")
 
 
-def _ensure_due_date_not_past(due_date):
-    if due_date < timezone.localdate():
-        raise ValidationError("The due date cannot be in the past.")
-
-
 @transaction.atomic
 def create_loan(*, reader, copy, due_date, loaned_by):
     _ensure_reader(reader)
-    _ensure_due_date_not_past(due_date)
 
     locked_copy = BookCopy.objects.select_for_update().get(pk=copy.pk)
     if Loan.objects.active().filter(copy=locked_copy).exists():
@@ -52,7 +46,6 @@ def return_loan(*, loan, returned_by):
 
 @transaction.atomic
 def change_due_date(*, loan, due_date):
-    _ensure_due_date_not_past(due_date)
     locked_loan = Loan.objects.select_for_update().get(pk=loan.pk)
     _ensure_active_loan(locked_loan)
     locked_loan.due_date = due_date

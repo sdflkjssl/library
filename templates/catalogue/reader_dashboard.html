@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}Reader dashboard - Library{% endblock %}
+{% block title %}Reader Dashboard - Library{% endblock %}
 
 {% block content %}
   <section class="page-heading">
     <div>
-      <p class="eyebrow">Reader view</p>
+      <p class="eyebrow">Reader View</p>
       <h1>Welcome back, {{ user.first_name|default:user.username }}</h1>
     </div>
-    <a class="button primary" href="{% url 'catalogue' %}">Search catalogue</a>
+    <a class="button primary" href="{% url 'catalogue' %}">Search Catalogue</a>
   </section>
 
   <section class="panel">
     <div class="section-heading">
-      <h2>Active loans</h2>
-      <a href="{% url 'reader_loans' %}">View all</a>
+      <h2>Active Loans</h2>
+      <a href="{% url 'reader_loans' %}">View All</a>
     </div>
     {% if active_loans %}
       <div class="table-wrap">
@@ -23,7 +23,7 @@
             <tr>
               <th>Book</th>
               <th>Copy</th>
-              <th>Due date</th>
+              <th>Due Date</th>
             </tr>
           </thead>
           <tbody>
@@ -35,9 +35,7 @@
                 </td>
                 <td><a href="{% url 'copy_detail' loan.copy.id %}">{{ loan.copy.inventory_code }}</a></td>
                 <td>
-                  <span class="badge {% if loan.is_overdue %}danger{% else %}neutral{% endif %}">
-                    {{ loan.due_date }}
-                  </span>
+                  {% include "catalogue/includes/due_date.html" with loan=loan %}
                 </td>
               </tr>
             {% endfor %}

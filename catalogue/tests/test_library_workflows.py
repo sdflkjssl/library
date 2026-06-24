@@ -177,7 +177,7 @@ class LibraryWorkflowTests(TestCase):
 
         response = self.client.get(reverse("reader_loans"))
 
-        self.assertContains(response, "Reader view")
+        self.assertContains(response, "Reader View")
 
     def test_librarian_catalogue_shows_availability_counts(self):
         create_loan(
@@ -201,12 +201,14 @@ class LibraryWorkflowTests(TestCase):
         self.assertContains(response, '<span class="brand">Library Desk</span>')
         self.assertNotContains(response, '<a class="brand"')
         self.assertContains(response, '<a class="active" href="/librarian/">Loans</a>')
+        self.assertContains(response, "New Loan")
+        self.assertNotContains(response, "New loan")
 
         response = self.client.get(reverse("book_copies_list"))
 
         self.assertContains(
             response,
-            '<a class="active" href="/librarian/copies/">All book copies</a>',
+            '<a class="active" href="/librarian/copies/">All Book Copies</a>',
         )
 
     def test_librarian_can_search_available_copies_for_modal(self):
@@ -225,6 +227,16 @@ class LibraryWorkflowTests(TestCase):
         self.assertEqual(len(payload["items"]), 1)
         self.assertEqual(payload["items"][0]["meta"], "Copy CA-002")
         self.assertEqual(payload["items"][0]["availability"], "1/2")
+
+    def test_copy_search_filters_by_copy_number(self):
+        self.client.login(username="librarian", password="pass")
+
+        response = self.client.get(reverse("api_copy_search"), {"q": "001"})
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(len(payload["items"]), 1)
+        self.assertEqual(payload["items"][0]["meta"], "Copy CA-001")
 
     def test_librarian_can_search_readers_for_modal(self):
         self.client.login(username="librarian", password="pass")
@@ -253,11 +265,13 @@ class LibraryWorkflowTests(TestCase):
         active_response = self.client.get(reverse("librarian_dashboard"), {"status": "active"})
         overdue_response = self.client.get(reverse("librarian_dashboard"), {"status": "overdue"})
 
-        self.assertContains(active_response, "Active loans")
-        self.assertContains(active_response, "Book copy")
+        self.assertContains(active_response, "Active Loans")
+        self.assertContains(active_response, "Book Copy")
+        self.assertContains(active_response, "7d Left")
+        self.assertContains(active_response, "1d Overdue")
         self.assertContains(active_response, overdue_loan.copy.inventory_code)
         self.assertContains(active_response, active_loan.copy.inventory_code)
-        self.assertContains(overdue_response, "Overdue loans")
+        self.assertContains(overdue_response, "Overdue Loans")
         self.assertContains(overdue_response, overdue_loan.copy.inventory_code)
         self.assertNotContains(overdue_response, active_loan.copy.inventory_code)
         self.assertContains(overdue_response, "row-overdue")
@@ -279,8 +293,8 @@ class LibraryWorkflowTests(TestCase):
 
         self.assertContains(available_response, self.second_copy.inventory_code)
         self.assertNotContains(available_response, self.copy.inventory_code)
-        self.assertContains(available_response, "All book copies")
-        self.assertContains(available_response, "Available book copies")
+        self.assertContains(available_response, "All Book Copies")
+        self.assertContains(available_response, "Available Book Copies")
         self.assertContains(all_response, self.copy.inventory_code)
         self.assertContains(all_response, self.second_copy.inventory_code)
 
@@ -531,6 +545,10 @@ class LibraryWorkflowTests(TestCase):
         )
 
         self.assertEqual(update_response.status_code, 302)
+        self.assertEqual(
+            update_response.url,
+            reverse("librarian_reader_loans", args=[self.other_reader.id]),
+        )
         self.assertEqual(self.other_reader.username, "other-updated")
         self.assertEqual(role, UserProfile.Role.READER)
         self.assertNotContains(form_response, "is_active")
@@ -554,6 +572,26 @@ class LibraryWorkflowTests(TestCase):
         )
         self.assertTrue(get_user_model().objects.filter(id=self.reader.id).exists())
 
+    def test_reader_with_only_returned_loans_can_be_deleted(self):
+        User = get_user_model()
+        loan = create_loan(
+            reader=self.other_reader,
+            copy=self.copy,
+            due_date=timezone.localdate() - timedelta(days=2),
+            loaned_by=self.librarian,
+        )
+        return_loan(loan=loan, returned_by=self.librarian)
+        self.client.login(username="librarian", password="pass")
+
+        list_response = self.client.get(reverse("readers_list"))
+        response = self.client.post(reverse("reader_delete", args=[self.other_reader.id]))
+        loan.refresh_from_db()
+
+        self.assertContains(list_response, reverse("reader_delete", args=[self.other_reader.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(User.objects.filter(id=self.other_reader.id).exists())
+        self.assertIsNone(loan.reader)
+
     def test_loan_creation_view_accepts_search_picker_ids(self):
         self.client.login(username="librarian", password="pass")
 
@@ -562,12 +600,39 @@ class LibraryWorkflowTests(TestCase):
             {
                 "reader": self.reader.id,
                 "copy": self.copy.id,
-                "due_date": timezone.localdate() + timedelta(days=7),
+                "due_date": timezone.localdate() - timedelta(days=1),
             },
         )
 
         self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("librarian_dashboard"))
         self.assertTrue(Loan.objects.active().filter(reader=self.reader, copy=self.copy).exists())
+        self.assertTrue(Loan.objects.get(reader=self.reader, copy=self.copy).is_overdue)
+
+    def test_loan_due_date_update_and_return_redirect_to_loans_page(self):
+        loan = create_loan(
+            reader=self.reader,
+            copy=self.copy,
+            due_date=timezone.localdate() + timedelta(days=7),
+            loaned_by=self.librarian,
+        )
+        new_due_date = timezone.localdate() - timedelta(days=3)
+        self.client.login(username="librarian", password="pass")
+
+        update_response = self.client.post(
+            reverse("loan_due_date", args=[loan.id]),
+            {"due_date": new_due_date},
+        )
+        loan.refresh_from_db()
+        return_response = self.client.post(reverse("loan_return", args=[loan.id]))
+        loan.refresh_from_db()
+
+        self.assertEqual(update_response.status_code, 302)
+        self.assertEqual(update_response.url, reverse("librarian_dashboard"))
+        self.assertEqual(loan.due_date, new_due_date)
+        self.assertEqual(return_response.status_code, 302)
+        self.assertEqual(return_response.url, reverse("librarian_dashboard"))
+        self.assertIsNotNone(loan.returned_at)
 
     def test_signup_creates_reader_account(self):
         User = get_user_model()
@@ -587,6 +652,54 @@ class LibraryWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 302)
         user = User.objects.get(username="newreader")
         self.assertEqual(user.profile.role, UserProfile.Role.READER)
+
+    def test_user_email_must_be_unique_across_account_forms(self):
+        self.reader.email = "taken@example.com"
+        self.reader.save(update_fields=["email"])
+
+        signup_form = ReaderSignupForm(
+            data={
+                "username": "duplicate-email-reader",
+                "first_name": "Duplicate",
+                "last_name": "Reader",
+                "email": "TAKEN@example.com",
+                "password1": "ValidPass1!",
+                "password2": "ValidPass1!",
+            }
+        )
+        librarian_form = LibrarianCreateForm(
+            data={
+                "username": "duplicate-email-librarian",
+                "first_name": "Duplicate",
+                "last_name": "Librarian",
+                "email": "taken@example.com",
+                "password1": "ValidPass1!",
+                "password2": "ValidPass1!",
+            }
+        )
+        update_form = ReaderUpdateForm(
+            data={
+                "username": self.other_reader.username,
+                "first_name": self.other_reader.first_name,
+                "last_name": self.other_reader.last_name,
+                "email": "taken@example.com",
+            },
+            instance=self.other_reader,
+        )
+
+        self.assertFalse(signup_form.is_valid())
+        self.assertFalse(librarian_form.is_valid())
+        self.assertFalse(update_form.is_valid())
+        self.assertIn("already used", signup_form.errors["email"][0])
+        self.assertIn("already used", librarian_form.errors["email"][0])
+        self.assertIn("already used", update_form.errors["email"][0])
+
+    def test_signup_password_help_has_no_bullet_list(self):
+        response = self.client.get(reverse("signup"))
+
+        self.assertContains(response, "Your password must be at least 8 characters")
+        self.assertNotContains(response, "<li>Your password must")
+        self.assertNotContains(response, "<ul>")
 
     def test_librarian_can_create_reader_without_switching_session(self):
         User = get_user_model()
