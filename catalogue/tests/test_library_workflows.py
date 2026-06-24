@@ -58,6 +58,12 @@ class LibraryWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, loan.copy.inventory_code)
 
+    def test_health_check_reports_database_connectivity(self):
+        response = self.client.get(reverse("health"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "ok"})
+
     def test_librarian_can_create_valid_loan(self):
         loan = create_loan(
             reader=self.reader,
