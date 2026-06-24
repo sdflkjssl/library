@@ -557,6 +557,7 @@ def librarian_delete(request, user_id):
 @librarian_required
 def book_copies_list(request):
     status = request.GET.get("status", "all")
+    query = request.GET.get("q", "").strip()
     if status == "available":
         copies = BookCopy.objects.available().select_related("book")
         title = "Available Book Copies"
@@ -564,6 +565,15 @@ def book_copies_list(request):
         status = "all"
         copies = BookCopy.objects.with_active_loan_flag().select_related("book")
         title = "All Book Copies"
+
+    if query:
+        copies = copies.filter(
+            Q(inventory_code__icontains=query)
+            | Q(book__title__icontains=query)
+            | Q(book__author__icontains=query)
+            | Q(book__reference_number__icontains=query)
+            | Q(book__isbn__icontains=query)
+        )
 
     active_loans = {
         loan.copy_id: loan
@@ -588,7 +598,7 @@ def book_copies_list(request):
     return render(
         request,
         "catalogue/book_copies_list.html",
-        {"copy_rows": copy_rows, "status": status, "title": title},
+        {"copy_rows": copy_rows, "query": query, "status": status, "title": title},
     )
 
 

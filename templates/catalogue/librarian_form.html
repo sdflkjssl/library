@@ -19,13 +19,21 @@
       <label class="{% if field.field.widget.input_type == 'checkbox' %}checkbox-label{% endif %}">
         {{ field.label }}
         {{ field }}
-        {% if field.help_text %}<span class="help-text">{{ field.help_text }}</span>{% endif %}
+        {% if field.name == "password1" %}
+          {% include "catalogue/includes/password_requirements.html" with input_id=field.id_for_label %}
+        {% elif field.name == "password2" %}
+          {% include "catalogue/includes/password_match.html" with input_id=field.id_for_label source_id=form.password1.id_for_label %}
+        {% elif field.help_text %}
+          <span class="help-text">{{ field.help_text }}</span>
+        {% endif %}
         {% if field.errors %}<span class="field-error">{{ field.errors|striptags }}</span>{% endif %}
       </label>
     {% endfor %}
     <div class="form-actions">
       <button class="button primary" type="submit">{{ submit_label }}</button>
-      <a class="button secondary" href="{% url 'librarians_list' %}">Cancel</a>
+      {% if librarian %}
+        <a class="button secondary" href="{% url 'librarians_list' %}">Cancel</a>
+      {% endif %}
     </div>
   </form>
 {% endblock %}

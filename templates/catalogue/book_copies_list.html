@@ -12,9 +12,18 @@
   </section>
 
   <nav class="segmented" aria-label="Book Copy Filter">
-    <a class="{% if status == 'all' %}active{% endif %}" href="{% url 'book_copies_list' %}?status=all">All Book Copies</a>
-    <a class="{% if status == 'available' %}active{% endif %}" href="{% url 'book_copies_list' %}?status=available">Available Book Copies</a>
+    <a class="{% if status == 'all' %}active{% endif %}" href="{% url 'book_copies_list' %}?status=all{% if query %}&q={{ query|urlencode }}{% endif %}">All Book Copies</a>
+    <a class="{% if status == 'available' %}active{% endif %}" href="{% url 'book_copies_list' %}?status=available{% if query %}&q={{ query|urlencode }}{% endif %}">Available Book Copies</a>
   </nav>
+
+  <form class="search-bar" method="get">
+    <input type="hidden" name="status" value="{{ status }}">
+    <input type="search" name="q" value="{{ query }}" placeholder="Search by title, author, ISBN, reference number, or copy number" autocomplete="off">
+    <button class="button secondary" type="submit">Search</button>
+    {% if query %}
+      <a class="button secondary" href="{% url 'book_copies_list' %}?status={{ status }}">Clear</a>
+    {% endif %}
+  </form>
 
   <section class="panel">
     <div class="section-heading">

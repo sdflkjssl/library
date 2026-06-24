@@ -659,6 +659,31 @@ tr:last-child td {
   margin: 0;
 }
 
+.password-requirements {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0.15rem 0 0;
+  padding-left: 1.15rem;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.password-rule {
+  color: var(--muted);
+}
+
+.password-rule.valid {
+  color: var(--success-text);
+}
+
+.password-rule.invalid {
+  color: var(--danger-text);
+}
+
+.password-rule::marker {
+  color: currentColor;
+}
+
 .messages {
   display: grid;
   gap: 0.7rem;

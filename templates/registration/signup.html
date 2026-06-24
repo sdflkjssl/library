@@ -18,14 +18,18 @@
         <label>
           {{ field.label }}
           {{ field }}
-          {% if field.help_text %}<div class="help-text">{{ field.help_text|safe }}</div>{% endif %}
+          {% if field.name == "password1" %}
+            {% include "catalogue/includes/password_requirements.html" with input_id=field.id_for_label %}
+          {% elif field.name == "password2" %}
+            {% include "catalogue/includes/password_match.html" with input_id=field.id_for_label source_id=form.password1.id_for_label %}
+          {% elif field.help_text %}
+            <div class="help-text">{{ field.help_text }}</div>
+          {% endif %}
           {% if field.errors %}<span class="field-error">{{ field.errors|striptags }}</span>{% endif %}
         </label>
       {% endfor %}
       <button class="button primary" type="submit">{% if librarian_creating_reader %}Create Reader{% else %}Create Account{% endif %}</button>
-      {% if librarian_creating_reader %}
-        <a href="{% url 'librarian_dashboard' %}">Cancel</a>
-      {% else %}
+      {% if not librarian_creating_reader %}
         <a href="{% url 'login' %}">Already Have An Account?</a>
       {% endif %}
     </form>

@@ -290,13 +290,26 @@ class LibraryWorkflowTests(TestCase):
             {"status": "available"},
         )
         all_response = self.client.get(reverse("book_copies_list"), {"status": "all"})
+        search_response = self.client.get(
+            reverse("book_copies_list"),
+            {"status": "all", "q": "001"},
+        )
+        available_search_response = self.client.get(
+            reverse("book_copies_list"),
+            {"status": "available", "q": "001"},
+        )
 
         self.assertContains(available_response, self.second_copy.inventory_code)
         self.assertNotContains(available_response, self.copy.inventory_code)
         self.assertContains(available_response, "All Book Copies")
         self.assertContains(available_response, "Available Book Copies")
+        self.assertContains(available_response, 'name="q"')
         self.assertContains(all_response, self.copy.inventory_code)
         self.assertContains(all_response, self.second_copy.inventory_code)
+        self.assertContains(search_response, self.copy.inventory_code)
+        self.assertNotContains(search_response, self.second_copy.inventory_code)
+        self.assertNotContains(available_search_response, self.copy.inventory_code)
+        self.assertContains(available_search_response, "0 results")
 
     def test_librarian_can_create_book_with_initial_copies(self):
         self.client.login(username="librarian", password="pass")
@@ -694,12 +707,39 @@ class LibraryWorkflowTests(TestCase):
         self.assertIn("already used", librarian_form.errors["email"][0])
         self.assertIn("already used", update_form.errors["email"][0])
 
-    def test_signup_password_help_has_no_bullet_list(self):
+    def test_account_create_forms_show_live_password_checklists(self):
         response = self.client.get(reverse("signup"))
 
-        self.assertContains(response, "Your password must be at least 8 characters")
-        self.assertNotContains(response, "<li>Your password must")
-        self.assertNotContains(response, "<ul>")
+        self.assertContains(response, 'data-password-requirements="id_password1"')
+        self.assertContains(response, 'data-password-match="id_password2"')
+        self.assertContains(response, "At least 8 characters")
+        self.assertContains(response, "Lowercase letter")
+        self.assertContains(response, "Uppercase letter")
+        self.assertContains(response, "Number")
+        self.assertContains(response, "Special character")
+        self.assertContains(response, "Passwords match")
+        self.assertNotContains(response, "Your password must be")
+
+        self.client.login(username="librarian", password="pass")
+        librarian_create_response = self.client.get(reverse("librarian_create"))
+
+        self.assertContains(
+            librarian_create_response,
+            'data-password-requirements="id_password1"',
+        )
+        self.assertContains(
+            librarian_create_response,
+            'data-password-match="id_password2"',
+        )
+        self.assertNotContains(librarian_create_response, ">Cancel</a>")
+
+    def test_librarian_create_reader_form_has_no_cancel_link(self):
+        self.client.login(username="librarian", password="pass")
+
+        response = self.client.get(reverse("signup"))
+
+        self.assertContains(response, "Create Reader")
+        self.assertNotContains(response, ">Cancel</a>")
 
     def test_librarian_can_create_reader_without_switching_session(self):
         User = get_user_model()

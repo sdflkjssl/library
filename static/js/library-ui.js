@@ -47,6 +47,56 @@
     });
   }
 
+  const passwordRequirementLists = document.querySelectorAll("[data-password-requirements]");
+  const passwordMatchLists = document.querySelectorAll("[data-password-match]");
+  const passwordChecks = {
+    length: (value) => value.length >= 8,
+    lower: (value) => /[a-z]/.test(value),
+    upper: (value) => /[A-Z]/.test(value),
+    number: (value) => /\d/.test(value),
+    special: (value) => /[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/.test(value),
+  };
+
+  function setPasswordRuleState(rule, isValid) {
+    rule.classList.toggle("valid", isValid);
+    rule.classList.toggle("invalid", !isValid);
+    rule.dataset.state = isValid ? "valid" : "invalid";
+  }
+
+  for (const list of passwordRequirementLists) {
+    const input = document.getElementById(list.dataset.passwordRequirements);
+    if (!input) {
+      continue;
+    }
+
+    const updateRules = () => {
+      for (const rule of list.querySelectorAll("[data-password-rule]")) {
+        const check = passwordChecks[rule.dataset.passwordRule];
+        setPasswordRuleState(rule, Boolean(check && check(input.value)));
+      }
+    };
+
+    input.addEventListener("input", updateRules);
+    updateRules();
+  }
+
+  for (const list of passwordMatchLists) {
+    const input = document.getElementById(list.dataset.passwordMatch);
+    const source = document.getElementById(list.dataset.passwordMatchSource);
+    const rule = list.querySelector("[data-password-match-rule]");
+    if (!input || !source || !rule) {
+      continue;
+    }
+
+    const updateMatch = () => {
+      setPasswordRuleState(rule, input.value.length > 0 && input.value === source.value);
+    };
+
+    input.addEventListener("input", updateMatch);
+    source.addEventListener("input", updateMatch);
+    updateMatch();
+  }
+
   const searchModal = document.querySelector("[data-search-modal]");
   const searchInput = document.querySelector("[data-search-input]");
   const searchResults = document.querySelector("[data-search-results]");
